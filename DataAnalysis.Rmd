@@ -15,7 +15,7 @@ library(tidyverse)
 
 ```{r}
 
-aux=read_tsv("data/combined_data_1.txt",col_names=FALSE,n_max =10000)# leo 10^4 lo leo con tabulador para que lea una varable
+aux=read_tsv("data/combined_data_1.txt",col_names=FALSE,n_max =300000)# leo 10^4 lo leo con tabulador para que lea una varable
 aux=aux%>% mutate(fila=row_number()) #Crea una columna nueva con el número de la observación.
 filas=grep(":",aux$X1) #Obtenemos las posiciones de la fila de las películas
 filas_ID= aux %>% filter( fila %in% filas ) #tabla, donde por cada id de película, nos dice en qué fila está
@@ -42,6 +42,9 @@ combined_data_1 = combined_data_1 %>%
     )
 
 combined_data_1$MovieID = unlist(strsplit(combined_data_1$MovieID , split=':', fixed=FALSE))
+
+aux_movie=read_csv("data/movie_titles.csv",col_names=FALSE,n_max =100)# leo 10^4 lo leo con tabulador para que lea una varable
+
 
 ```
 
