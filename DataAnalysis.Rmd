@@ -3,69 +3,37 @@ title: 'Análisis de datos: Netfliz Prize Program'
 author: "Laura Basalo Tur, Camila Pérez"
 date: "20/11/2020"
 output:
-  pdf_document: default
-  html_document: default
+  html_document:
+    toc: yes
+    number_sections: yes
+  pdf_document:
+    toc: yes
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+knitr::kable
 library(tidyverse)
+library(lubridate) #Trabajar con fechas
+rm(list=ls())
+cat("\014") ## limpia la pantalla del R
 ```
 
 
-#Introducción
+# **Introducción**
 
 TODO: Comentar...
 
 
-#Carga de datos
+# **Carga de datos**
 
 TODO: Comentar...
 
-```{r}
-rm(list=ls())
-cat("\014") ## limpia la pantalla del R
 
+```{r message = FALSE}
 #Se importan 'n' observaciones del conjunto de datos 'Netflix Prize data'
 n = 10000
 dataframe = read_tsv("data/combined_data_1.txt", col_names=FALSE, n_max = n)
-
-#Se asigna una posición a cada observación para posteriormente indicar el id de película de cada una de ellas
-dataframe = dataframe %>% 
-            mutate(row=row_number()) 
-rows = grep(":", dataframe$X1) 
-rows_ID = dataframe %>% 
-         filter( row %in% rows ) 
-IDs = unique(rows_ID$X1)
-reps = diff(c(rows_ID$row,max(dataframe$row)+1))
-
-df = dataframe %>% 
-     mutate(ID1 = rep(rows_ID$X1,times= reps)) %>% 
-     filter(!(row %in% rows_ID))
-
-#Se definen las columnas del dataframe
-df = df %>% 
-     separate(X1,into = c("ID_film","Score","Data"), sep = ",") %>%
-     separate(Data,into = c("Year","Month","Day"), sep = "-") %>%
-     na.omit(df) %>%
-     mutate(row=row_number())
-
-#Se eliminan las variables auxiliares
-rm(dataframe,rows,rows_ID,IDs,reps)
-
-#Se ordenan las posiciones de las columnas y se indican su nuevo nombre
-df = df[, c(6, 7, 1, 2, 3,4,5)]
-df = df %>% 
-     rename(
-      MovieID = ID1,
-      CustomerID = ID_film,
-      Rating = Score,
-      Idx = row
-     )
-
-#Se elimina el caracter ':' de la columna del MovieID
-df$MovieID = unlist(strsplit(df$MovieID , split = ':', fixed=FALSE))
-
 
 #Se importa el dataframe de los datos de las películas
 n_mov = 10
@@ -74,9 +42,152 @@ df_movies = read_csv("data/movie_titles.csv", col_names = FALSE, n_max = n_mov)
 
 
 
-Visualizo la tabla
+# **Conociendo el dataframe y sus variables**
 
-```{r}
-knitr::kable(df)
+TODO: Comentar...
+
+## Estructura
+```{r message=FALSE, warning=FALSE}
+# Structure 
+#str(df)
 ```
 
+## Resumen 
+```{r message=FALSE, warning=FALSE}
+# Summary
+#knitr::kable(summary(df))
+```
+
+
+
+
+
+## Primeras 10 filas
+```{r message=FALSE, warning=FALSE}
+# First 10 rows 
+#knitr::kable(head(df))
+```
+
+## Últimas 10 filas 
+```{r message=FALSE, warning=FALSE}
+# Last 10 rows 
+#knitr::kable(tail(df))
+```
+
+```{r}
+str(df_movies)
+```
+
+
+
+# **Limpieza de datos**
+
+TODO: Comentar...
+
+```{r message = FALSE}
+#Se asigna una posición a cada observación para posteriormente indicar el id de película de cada una de ellas
+dataframe = dataframe %>% 
+            mutate(Idx = row_number()) 
+rows = grep(":", dataframe$X1) 
+rows_ID = dataframe %>% 
+          filter( Idx %in% rows ) 
+IDs = unique(rows_ID$X1)
+reps = diff(c(rows_ID$Idx,max(dataframe$Idx)+1))
+
+df = dataframe %>% 
+     mutate(MovieID = rep(rows_ID$X1,times= reps)) %>% 
+     filter(!(Idx %in% rows_ID))
+
+#Se definen las columnas del dataframe
+df = df %>% 
+     separate(X1,into = c("CustomerID","Rating","RatingDate"), sep = ",") %>%
+     #separate(Data,into = c("Year","Month","Day"), sep = "-") %>%
+     na.omit(df) %>%
+     mutate(Idx = row_number())
+
+#Se eliminan las variables auxiliares
+rm(dataframe,rows,rows_ID,IDs,reps)
+
+
+
+```
+
+```{r}
+df_movies = df_movies %>% 
+     rename(
+      MovieID = X1,
+      MovieRelease = X2,
+      Title = X3
+     )
+
+```
+
+
+
+
+```{r}
+#Se elimina el caracter ':' de la columna del MovieID
+df$MovieID = unlist(strsplit(df$MovieID , split = ':', fixed=FALSE))
+
+#Se transforman la variable 'Rating' a númerica
+df$Rating = as.numeric(df$Rating)
+
+df$RatingDate = as.Date(df$RatingDate, format = "%Y-%m-%d")
+
+#Se unifica el dataframe de las puntuaciones con el de las películas
+df = merge(x = df, y = df_movies, by = "MovieID", all = TRUE)
+
+#Se añade la diferencia en años entre el año de puntuación y el de estreno de la película
+df$YearsSinceRelease = year(df$RatingDate) - df$MovieRelease
+
+
+#Se ordenan las posiciones de las columnas y se indican su nuevo nombre
+#df = df[, c(6, 7, 1, 2, 3,4,5)]
+df = df[, c(5, 1, 7, 2, 3, 4, 6, 8)]
+
+
+
+
+
+```
+
+
+
+
+# **Analizando el dataframe**
+
+
+## Calificaciones de las películas
+
+### Calificación general 
+
+Analizar número de votaciones de las diferentes películas. ¿Cuántas películas hay de cada rating (1,2,3,4 y 5 estrellas)?
+
+### Analizar nº de votaciones/puntuación de cada película
+
+### Película con mejor y peor calificación (gráfico palabras)
+
+### Película más votada y menos votada (gráfico palabras)
+
+
+
+## Relación fecha puntuación / calificación
+
+### ¿Cuántas puntuaciones hay por cada año?
+
+### Media del rating por año
+
+
+
+## Relación fecha release de la película / calificación
+
+### Relación fecha película con la fecha puntuación y la puntuación 
+
+### ¿Si las fechas de release y puntuación son cercanas, la puntuación es mejor o peor? Revisar la diferencia de las fechas
+
+
+## Tiempos
+
+### Tiempo medio que ha pasado desde el estreno de la película hasta que ha sido puntuada
+
+### Cantidad de tiempo entre estreno y calificación (Nº de casos)
