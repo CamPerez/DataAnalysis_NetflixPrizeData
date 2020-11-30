@@ -19,6 +19,10 @@ rm(list=ls())
 cat("\014") ## limpia la pantalla del R
 ```
 
+<center><img
+src="imgs/netflix-header.jpg">
+</center>
+
 
 # **Introducción**
 
@@ -48,33 +52,27 @@ TODO: Comentar...
 
 ## Estructura
 ```{r message=FALSE, warning=FALSE}
-# Structure 
-#str(df)
+#Structure 
+str(dataframe)
 ```
 
 ## Resumen 
 ```{r message=FALSE, warning=FALSE}
-# Summary
-#knitr::kable(summary(df))
+#Summary
+knitr::kable(summary(dataframe))
 ```
-
-
-
 
 
 ## Primeras 10 filas
 ```{r message=FALSE, warning=FALSE}
 # First 10 rows 
-#knitr::kable(head(df))
+knitr::kable(head(dataframe))
 ```
 
-## Últimas 10 filas 
+
+## Estructura
 ```{r message=FALSE, warning=FALSE}
-# Last 10 rows 
-#knitr::kable(tail(df))
-```
-
-```{r}
+#Structure 
 str(df_movies)
 ```
 
@@ -107,9 +105,6 @@ df = df %>%
 
 #Se eliminan las variables auxiliares
 rm(dataframe,rows,rows_ID,IDs,reps)
-
-
-
 ```
 
 ```{r}
@@ -162,6 +157,22 @@ df = df[, c(5, 1, 7, 2, 3, 4, 6, 8)]
 ### Calificación general 
 
 Analizar número de votaciones de las diferentes películas. ¿Cuántas películas hay de cada rating (1,2,3,4 y 5 estrellas)?
+
+```{r}
+ggplot(data = df, aes(x = Rating)) +
+  geom_bar(aes(y = ..prop.., fill = "mistyrose2"), 
+           stat="count", 
+           show.legend = FALSE) +
+  geom_text(aes(label = ..count.., y = ..prop..), 
+            stat = "count", 
+            vjust = -.5) +
+  #geom_label(aes(label = ..count..)) +
+  labs(x="Rating", y="Number of ratings", title="Total Ratings")+
+  coord_flip() + 
+  theme_classic()
+
+```
+
 
 ### Analizar nº de votaciones/puntuación de cada película
 
