@@ -15,6 +15,11 @@ knitr::opts_chunk$set(echo = TRUE)
 knitr::kable
 library(tidyverse)
 library(lubridate) #Trabajar con fechas
+library(ggimage) #Gggplot images
+library(magick)
+library(knitr) # dynamic report generation
+library(gridExtra) # miscellaneous Functions for "Grid" Graphics
+library(grid) # add Grid to a Plot
 rm(list=ls())
 cat("\014") ## limpia la pantalla del R
 ```
@@ -25,6 +30,9 @@ src="imgs/netflix-header.jpg">
 
 
 # **Introducción**
+
+En el presente estudio se procederá a analizar el data set llamado "Netflix Prize data" obtenido en la web Kaggle. 
+Esta base de datos cuenta con un tamaño de espacio en memoria demasiado elevado, por lo que se procedera a extraer una parte de los datos.
 
 TODO: Comentar...
 
@@ -160,16 +168,20 @@ Analizar número de votaciones de las diferentes películas. ¿Cuántas películ
 
 ```{r}
 ggplot(data = df, aes(x = Rating)) +
-  geom_bar(aes(y = ..prop.., fill = "mistyrose2"), 
+  geom_bar(aes(y = ..prop.., fill = ..count..), 
            stat="count", 
            show.legend = FALSE) +
-  geom_text(aes(label = ..count.., y = ..prop..), 
-            stat = "count", 
+  geom_label(aes(label = ..count.., y = ..prop..), 
+            stat = "count",
             vjust = -.5) +
-  #geom_label(aes(label = ..count..)) +
+  scale_fill_gradient(low = "lightcoral", high = "firebrick2")+
   labs(x="Rating", y="Number of ratings", title="Total Ratings")+
   coord_flip() + 
   theme_classic()
+
+# Image in the visualization 
+image = image_read("imgs/icon-netflix.png") 
+grid.raster(image, x=0.85, y=0.26, height=0.34)
 
 ```
 
