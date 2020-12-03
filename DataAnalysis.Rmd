@@ -107,7 +107,6 @@ df = dataframe %>%
 #Se definen las columnas del dataframe
 df = df %>% 
      separate(X1,into = c("CustomerID","Rating","RatingDate"), sep = ",") %>%
-     #separate(Data,into = c("Year","Month","Day"), sep = "-") %>%
      na.omit(df) %>%
      mutate(Idx = row_number())
 
@@ -141,16 +140,11 @@ df$RatingDate = as.Date(df$RatingDate, format = "%Y-%m-%d")
 df = merge(x = df, y = df_movies, by = "MovieID", all = TRUE)
 
 #Se añade la diferencia en años entre el año de puntuación y el de estreno de la película
-df$YearsSinceRelease = year(df$RatingDate) - df$MovieRelease
+df = mutate(df, YearsSinceRelease = year(RatingDate) - MovieRelease)
 
 
 #Se ordenan las posiciones de las columnas y se indican su nuevo nombre
-#df = df[, c(6, 7, 1, 2, 3,4,5)]
-df = df[, c(5, 1, 7, 2, 3, 4, 6, 8)]
-
-
-
-
+df = select(df, Idx, MovieID, Title, CustomerID, Rating, RatingDate, MovieRelease, YearsSinceRelease)
 
 ```
 
@@ -175,13 +169,13 @@ ggplot(data = df, aes(x = Rating)) +
             stat = "count",
             vjust = -.5) +
   scale_fill_gradient(low = "lightcoral", high = "firebrick2")+
-  labs(x="Rating", y="Number of ratings", title="Total Ratings")+
+  labs(x = "Rating", y = "Number of ratings", title = "Total Ratings")+
   coord_flip() + 
   theme_classic()
 
 # Image in the visualization 
-image = image_read("imgs/icon-netflix.png") 
-grid.raster(image, x=0.85, y=0.26, height=0.34)
+image = image_read("imgs/icon-rating.png") 
+grid.raster(image, x = 0.80, y = 0.25, height = 0.23)
 
 ```
 
