@@ -25,7 +25,7 @@ cat("\014") ## limpia la pantalla del R
 ```
 
 <center><img
-src="imgs/netflix-header.jpg">
+src="imgs/netflix-intro2.gif">
 </center>
 
 
