@@ -34,7 +34,11 @@ src="imgs/netflix-intro2.gif">
 En el presente estudio se procederá a analizar el data set llamado "Netflix Prize data" obtenido en la web Kaggle. 
 Esta base de datos cuenta con un tamaño de espacio en memoria demasiado elevado, por lo que se procedera a extraer una parte de los datos.
 
-TODO: Comentar...
+Antes de extraer los datos se ha procedido a visyalizar a que tipo de datos ibamos a enfrentarnos. Esta base de datos cuenta con un total de 5 variables, que son: ID del usuario, el ID de la película, la calificación de esta y el dia, mes y año en la cual se realizó esta calificación.
+
+Investigando en Kaggle, pudimos encontrar otra base de datos, la cual contenia el título de cada ID asociado a las películas además de el año en el que salío esta. Posteriormente realizamos la inclusión de estos datos junto con los datos iniciales para obtener la base de datos final para trabajarla más comodamente.
+
+Una vez realizado este proceso, pensamo si podríamos generar nuevas variables para incluirlas en nuestro estudio. Pensamos que sería interesante, ya que contamos con el año de estreno de la película y la fecha en la que se puntuó, incluir la variable YearSinceRelease la cual mide la diferencia de años transcurridos desde el etreno hasta la puntuación de las diferentes películas.
 
 
 # **Carga de datos**
@@ -44,11 +48,12 @@ TODO: Comentar...
 
 ```{r message = FALSE}
 #Se importan 'n' observaciones del conjunto de datos 'Netflix Prize data'
-n = 10000
+#n = 10000
+n = 352872-1 # leo las primeras 100 películas 
 dataframe = read_tsv("data/combined_data_1.txt", col_names=FALSE, n_max = n)
 
 #Se importa el dataframe de los datos de las películas
-n_mov = 10
+n_mov = 100
 df_movies = read_csv("data/movie_titles.csv", col_names = FALSE, n_max = n_mov)
 ```
 
@@ -61,27 +66,27 @@ TODO: Comentar...
 ## Estructura
 ```{r message=FALSE, warning=FALSE}
 #Structure 
-str(dataframe)
+str_df = str(dataframe)
 ```
 
 ## Resumen 
 ```{r message=FALSE, warning=FALSE}
 #Summary
-knitr::kable(summary(dataframe))
+sum = kable(summary(dataframe))
 ```
 
 
 ## Primeras 10 filas
 ```{r message=FALSE, warning=FALSE}
 # First 10 rows 
-knitr::kable(head(dataframe))
+head = kable(head(dataframe))
 ```
 
 
 ## Estructura
 ```{r message=FALSE, warning=FALSE}
 #Structure 
-str(df_movies)
+str_mov = str(df_movies)
 ```
 
 
@@ -94,24 +99,29 @@ TODO: Comentar...
 #Se asigna una posición a cada observación para posteriormente indicar el id de película de cada una de ellas
 dataframe = dataframe %>% 
             mutate(Idx = row_number()) 
-rows = grep(":", dataframe$X1) 
-rows_ID = dataframe %>% 
-          filter( Idx %in% rows ) 
-IDs = unique(rows_ID$X1)
-reps = diff(c(rows_ID$Idx,max(dataframe$Idx)+1))
 
+#Guardamos la fila donde empieza cada película
+movie_rows = grep(":", dataframe$X1) 
+
+#Añadimos el id de la película a cada posición y eliminamos el caracter ":"
+rows_ID = dataframe %>% 
+          filter(Idx %in% movie_rows) %>%
+          mutate(X1 = as.integer(gsub(":","",X1)))
+
+#Número de veces que se tendrá que repetir el identificador de cada película
+reps = diff(c(rows_ID$Idx, max(dataframe$Idx) + 1))
 df = dataframe %>% 
-     mutate(MovieID = rep(rows_ID$X1,times= reps)) %>% 
+     mutate(MovieID = rep(rows_ID$X1, times = reps)) %>% 
      filter(!(Idx %in% rows_ID))
 
 #Se definen las columnas del dataframe
 df = df %>% 
-     separate(X1,into = c("CustomerID","Rating","RatingDate"), sep = ",") %>%
+     separate(X1,into = c("UserID","Rating","RatingDate"), sep = ",") %>%
      na.omit(df) %>%
      mutate(Idx = row_number())
 
 #Se eliminan las variables auxiliares
-rm(dataframe,rows,rows_ID,IDs,reps)
+rm(dataframe, movie_rows, rows_ID, reps)
 ```
 
 ```{r}
@@ -128,12 +138,10 @@ df_movies = df_movies %>%
 
 
 ```{r}
-#Se elimina el caracter ':' de la columna del MovieID
-df$MovieID = unlist(strsplit(df$MovieID , split = ':', fixed=FALSE))
-
-#Se transforman la variable 'Rating' a númerica
+#Se transforma la variable 'Rating' a tipo númerica
 df$Rating = as.numeric(df$Rating)
 
+#Se transforma la variable 'RatingDate' a tipo date
 df$RatingDate = as.Date(df$RatingDate, format = "%Y-%m-%d")
 
 #Se unifica el dataframe de las puntuaciones con el de las películas
@@ -142,9 +150,8 @@ df = merge(x = df, y = df_movies, by = "MovieID", all = TRUE)
 #Se añade la diferencia en años entre el año de puntuación y el de estreno de la película
 df = mutate(df, YearsSinceRelease = year(RatingDate) - MovieRelease)
 
-
 #Se ordenan las posiciones de las columnas y se indican su nuevo nombre
-df = select(df, Idx, MovieID, Title, CustomerID, Rating, RatingDate, MovieRelease, YearsSinceRelease)
+df = select(df, Idx, MovieID, Title, UserID, Rating, RatingDate, MovieRelease, YearsSinceRelease)
 
 ```
 
@@ -152,6 +159,17 @@ df = select(df, Idx, MovieID, Title, CustomerID, Rating, RatingDate, MovieReleas
 
 
 # **Analizando el dataframe**
+
+
+```{r}
+glimpse(df)
+ncol(df)
+nrow(df)
+length(unique(df$UserID))
+```
+
+
+
 
 
 ## Calificaciones de las películas
@@ -162,14 +180,15 @@ Analizar número de votaciones de las diferentes películas. ¿Cuántas películ
 
 ```{r}
 ggplot(data = df, aes(x = Rating)) +
-  geom_bar(aes(y = ..prop.., fill = ..count..), 
+  geom_bar(aes(y = ..count.., fill = ..count..), 
            stat="count", 
            show.legend = FALSE) +
-  geom_label(aes(label = ..count.., y = ..prop..), 
+  geom_label(aes(label = ..count.., y = ..count..), 
             stat = "count",
             vjust = -.5) +
   scale_fill_gradient(low = "lightcoral", high = "firebrick2")+
   labs(x = "Rating", y = "Number of ratings", title = "Total Ratings")+
+  scale_y_continuous(limits=c(0,200000))+
   coord_flip() + 
   theme_classic()
 
@@ -180,12 +199,55 @@ grid.raster(image, x = 0.80, y = 0.25, height = 0.23)
 ```
 
 
+```{r}
+media = mean(df$Rating, na.rm = TRUE)
+media
+
+moda = names(which(table(df$Rating) == max(table(df$Rating))))
+moda
+```
+
+Como se puede observar en el gráfico, las puntuaciones generalmente han sido positivas ya que la mayoria de los casos tienen una puntuación superior a 3.
+
+La calificación de 4 que ha sido dada por un total de 2926 usuarios, es la que se ha dado más veces.
+
+La calificación media de todas las películas es de 3.37.
+
 ### Analizar nº de votaciones/puntuación de cada película
 
 ### Película con mejor y peor calificación (gráfico palabras)
 
 ### Película más votada y menos votada (gráfico palabras)
 
+```{r}
+
+#Más votada
+
+count_mov = table(df$MovieID)
+df$Title[df$MovieID == which(count_mov == max(count_mov))][1]
+
+
+Mejor = df$Title[df$MovieID == which(count_mov == max(count_mov))][1]
+
+df_1 = df[df$MovieID == "30",]
+ggplot(data = df_1, aes(x = Rating)) +
+  geom_bar(aes(y = ..count.., fill = ..count..), 
+           stat="count", 
+           show.legend = FALSE) +
+  geom_label(aes(label = ..count.., y = ..count..), 
+            stat = "count",
+            vjust = -.5) +
+  scale_fill_gradient(low = "cadetblue1", high = "cadetblue4")+
+  labs(x = "Rating", y = "Number of ratings", title = "Something's Gotta Give
+")+
+  scale_y_continuous(limits=c(0,250))+
+  coord_flip() + 
+  theme_classic()
+
+# Image in the visualization 
+#image = image_read("imgs/mejor.jpg") 
+#grid.raster(image, x = 0.80, y = 0.35, height = 0.4)
+```
 
 
 ## Relación fecha puntuación / calificación
