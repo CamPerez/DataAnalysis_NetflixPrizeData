@@ -5,7 +5,6 @@ date: "20/11/2020"
 output:
   html_document:
     toc: yes
-    number_sections: yes
   pdf_document:
     toc: yes
 ---
@@ -31,14 +30,24 @@ src="imgs/netflix-intro2.gif">
 
 # **Introducción**
 
-En el presente estudio se procederá a analizar el data set llamado "Netflix Prize data" obtenido en la web Kaggle. 
-Esta base de datos cuenta con un tamaño de espacio en memoria demasiado elevado, por lo que se procedera a extraer una parte de los datos.
+En el presente estudio se procederá a analizar el data set llamado *"Netflix Prize data"* obtenido en la página web Kaggle. Dicho dataset se creó como una competición para encontrar el mejor algoritmo de predicción de la puntuación que los usuarios dan a las películas de la plataforma. 
 
-Antes de extraer los datos se ha procedido a visyalizar a que tipo de datos ibamos a enfrentarnos. Esta base de datos cuenta con un total de 5 variables, que son: ID del usuario, el ID de la película, la calificación de esta y el dia, mes y año en la cual se realizó esta calificación.
+Antes de extraer la información y comenzar a trabajar sobre ella se ha procedido a visualizar a qué tipo de datos íbamos a enfrentarnos. El dataset contiene diversos archivos pero solo nos centraremos con los que vamos a trabajar en este estudio: 
 
-Investigando en Kaggle, pudimos encontrar otra base de datos, la cual contenia el título de cada ID asociado a las películas además de el año en el que salío esta. Posteriormente realizamos la inclusión de estos datos junto con los datos iniciales para obtener la base de datos final para trabajarla más comodamente.
 
-Una vez realizado este proceso, pensamo si podríamos generar nuevas variables para incluirlas en nuestro estudio. Pensamos que sería interesante, ya que contamos con el año de estreno de la película y la fecha en la que se puntuó, incluir la variable YearSinceRelease la cual mide la diferencia de años transcurridos desde el etreno hasta la puntuación de las diferentes películas.
+#### Combined Data
+
+Los archivos *'combined_data_{nº}'* contienen la información de las puntuaciones de los usuarios para determinado código de película, así como el identificador de usuario y la fecha (día, mes y año) en la que se dio dicha valoración. 
+
+Esta base de datos cuenta con un tamaño de espacio en memoria demasiado elevado, por lo que se procederá a extraer una parte de los datos y nos quedaremos con las 100 primeras películas de cada archivo.
+
+
+#### Movie titles
+
+Otro de los archivos que se utilizarán en este estudio contiene el título de cada ID asociado a las películas además del año en el que se estrenó. En secciones posteriores explicaremos como realizaremos la inclusión de estos datos junto con los datos iniciales para obtener el dataset final para trabajar más comodamente.
+
+
+Una vez realizado este proceso, pensamos en generar nuevas variables para incluirlas en nuestro estudio ya que sería interesante medir la diferencia de años transcurridos desde el estreno hasta la puntuación de las diferentes películas ("YearsSinceRelease").
 
 
 # **Carga de datos**
@@ -188,7 +197,7 @@ ggplot(data = df, aes(x = Rating)) +
             vjust = -.5) +
   scale_fill_gradient(low = "lightcoral", high = "firebrick2")+
   labs(x = "Rating", y = "Number of ratings", title = "Total Ratings")+
-  scale_y_continuous(limits=c(0,200000))+
+  scale_y_continuous(limits=c(0,150000))+
   coord_flip() + 
   theme_classic()
 
@@ -215,22 +224,26 @@ La calificación media de todas las películas es de 3.37.
 
 ### Analizar nº de votaciones/puntuación de cada película
 
+
+```{r}
+count_movies = table(df$Title, df$Rating)
+d = as.data.frame(count_movies)
+ggplot(d, aes(x=d$MovieID, y = Freq, fill=d$Rating)) + 
+    geom_bar(stat="identity")
+```
+
+
+
+
 ### Película con mejor y peor calificación (gráfico palabras)
 
 ### Película más votada y menos votada (gráfico palabras)
 
 ```{r}
-
 #Más votada
+df_more_voted = df[df$MovieID == which(count_mov == max(count_mov)),]
 
-count_mov = table(df$MovieID)
-df$Title[df$MovieID == which(count_mov == max(count_mov))][1]
-
-
-Mejor = df$Title[df$MovieID == which(count_mov == max(count_mov))][1]
-
-df_1 = df[df$MovieID == "30",]
-ggplot(data = df_1, aes(x = Rating)) +
+ggplot(data = df_more_voted, aes(x = Rating)) +
   geom_bar(aes(y = ..count.., fill = ..count..), 
            stat="count", 
            show.legend = FALSE) +
@@ -238,9 +251,30 @@ ggplot(data = df_1, aes(x = Rating)) +
             stat = "count",
             vjust = -.5) +
   scale_fill_gradient(low = "cadetblue1", high = "cadetblue4")+
-  labs(x = "Rating", y = "Number of ratings", title = "Something's Gotta Give
-")+
-  scale_y_continuous(limits=c(0,250))+
+  labs(x = "Rating", y = "Number of ratings", title = df_more_voted$Title[1])+
+  scale_y_continuous(limits=c(0,60000))+
+  coord_flip() + 
+  theme_classic()
+
+# Image in the visualization 
+#image = image_read("imgs/mejor.jpg") 
+#grid.raster(image, x = 0.80, y = 0.35, height = 0.4)
+```
+
+```{r}
+#Menos votada
+df_less_voted = df[df$MovieID == which(count_mov == min(count_mov)),]
+
+ggplot(data = df_less_voted, aes(x = Rating)) +
+  geom_bar(aes(y = ..count.., fill = ..count..), 
+           stat="count", 
+           show.legend = FALSE) +
+  geom_label(aes(label = ..count.., y = ..count..), 
+            stat = "count",
+            vjust = -.5) +
+  scale_fill_gradient(low = "cadetblue1", high = "cadetblue4")+
+  labs(x = "Rating", y = "Number of ratings", title = df_less_voted$Title[1])+
+  scale_y_continuous(limits=c(0,50))+
   coord_flip() + 
   theme_classic()
 
