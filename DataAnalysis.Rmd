@@ -21,6 +21,10 @@ library(gridExtra) # miscellaneous Functions for "Grid" Graphics
 library(grid) # add Grid to a Plot
 rm(list=ls())
 cat("\014") ## limpia la pantalla del R
+
+
+
+set.seed(2495)
 ```
 
 <center><img
@@ -55,15 +59,59 @@ Una vez realizado este proceso, pensamos en generar nuevas variables para inclui
 TODO: Comentar...
 
 
+```{r}
+#Leemos el índice
+filas_ID_combined_all = read_csv("data/filas_ID_combined_all.txt")
+
+combined_data1 = read_tsv("data/combined_data_1.txt", col_names=FALSE)
+combined_data2 = read_tsv("data/combined_data_2.txt", col_names=FALSE)
+combined_data3 = read_tsv("data/combined_data_3.txt", col_names=FALSE)
+combined_data4 = read_tsv("data/combined_data_4.txt", col_names=FALSE)
+
+#Obtenemos nuestra muestra de películas
+muestra_grupo = sample(1:17770, 250, replace = FALSE)
+
+#Nos quedamos con el índice de las películas de nuestra muestra
+filas_ID_combined_all = filter(filas_ID_combined_all, filas_ID_combined_all$ID %in% muestra_grupo)
+filas_ID_combined_all = select(filas_ID_combined_all, ID, fila, fila_final, data)
+
+#Mostramos cuántas películas debemos leer de cada fichero
+table(filas_ID_combined_all$data)
+
+
+obtain_movies = function(combined_data, idx){
+  rows_data = filter(filas_ID_combined_all, data == idx)
+     rows_data = select(rows_data, fila, fila_final)
+     ranges = c()
+     for(i in 1:nrow(rows_data)){
+      ranges = c(ranges, rows_data[[i,1]]:rows_data[[i,2]])
+      }
+     combined_data = slice(combined_data, ranges)
+     return(combined_data)
+
+}
+
+
+data1 = obtain_movies(combined_data1, 1)
+data2 = obtain_movies(combined_data2, 2)
+data3 = obtain_movies(combined_data3, 3)
+data4 = obtain_movies(combined_data4, 4)
+
+
+d = rbind(data1,data2,data3,data4)
+```
+
+
+
 ```{r message = FALSE}
 #Se importan 'n' observaciones del conjunto de datos 'Netflix Prize data'
 #n = 10000
 n = 352872-1 # leo las primeras 100 películas 
-dataframe = read_tsv("data/combined_data_1.txt", col_names=FALSE, n_max = n)
+dataframe = read_tsv("data/combined_data_1.txt", col_names=FALSE)
 
 #Se importa el dataframe de los datos de las películas
 n_mov = 100
-df_movies = read_csv("data/movie_titles.csv", col_names = FALSE, n_max = n_mov)
+df_movies = read_csv("data/movie_titles.csv", col_names = FALSE)
 ```
 
 
@@ -105,6 +153,8 @@ str_mov = str(df_movies)
 TODO: Comentar...
 
 ```{r message = FALSE}
+
+dataframe = d
 #Se asigna una posición a cada observación para posteriormente indicar el id de película de cada una de ellas
 dataframe = dataframe %>% 
             mutate(Idx = row_number()) 
