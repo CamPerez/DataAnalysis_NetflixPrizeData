@@ -21,10 +21,6 @@ library(gridExtra) # miscellaneous Functions for "Grid" Graphics
 library(grid) # add Grid to a Plot
 rm(list=ls())
 cat("\014") ## limpia la pantalla del R
-
-
-
-set.seed(2495)
 ```
 
 <center><img
@@ -54,136 +50,111 @@ Otro de los archivos que se utilizarán en este estudio contiene el título de c
 Una vez realizado este proceso, pensamos en generar nuevas variables para incluirlas en nuestro estudio ya que sería interesante medir la diferencia de años transcurridos desde el estreno hasta la puntuación de las diferentes películas ("YearsSinceRelease").
 
 
-# **Carga de datos**
+# **Carga y lectura de datos**
 
 TODO: Comentar...
 
+Función 
 
+```{r}
+#Función que obtiene los datos de filas específicas
+obtain_movies = function(combined_data, idx){
+  #Obtenemos las películas del archivo a leer (1,2,3 o 4)
+  rows_data = filter(filas_ID_combined_all, data == idx)
+  rows_data = select(rows_data, fila, fila_final)
+  
+  #Por cada fila guardamos el rango de posiciones a leer en el fichero
+  ranges = c()
+  for(i in 1:nrow(rows_data)){
+    ranges = c(ranges, rows_data[[i,1]]:rows_data[[i,2]])
+    }
+  
+  #Nos quedamos solo con los datos de las películas de la muestra
+  combined_data = slice(combined_data, ranges)
+  return(combined_data)
+}
+```
+
+
+Lectura de los ficheros y creación del fichero único con las películas de la muestra
 ```{r}
 #Leemos el índice
 filas_ID_combined_all = read_csv("data/filas_ID_combined_all.txt")
 
+#Cargamos los ficheros con la información de Netflix
 combined_data1 = read_tsv("data/combined_data_1.txt", col_names=FALSE)
 combined_data2 = read_tsv("data/combined_data_2.txt", col_names=FALSE)
 combined_data3 = read_tsv("data/combined_data_3.txt", col_names=FALSE)
 combined_data4 = read_tsv("data/combined_data_4.txt", col_names=FALSE)
 
 #Obtenemos nuestra muestra de películas
-muestra_grupo = sample(1:17770, 250, replace = FALSE)
+n_muestra = 250
+set.seed(2495)
+muestra_grupo = sample(1:17770, n_muestra, replace = FALSE)
 
 #Nos quedamos con el índice de las películas de nuestra muestra
 filas_ID_combined_all = filter(filas_ID_combined_all, filas_ID_combined_all$ID %in% muestra_grupo)
 filas_ID_combined_all = select(filas_ID_combined_all, ID, fila, fila_final, data)
 
 #Mostramos cuántas películas debemos leer de cada fichero
-table(filas_ID_combined_all$data)
+#table(filas_ID_combined_all$data)
 
-
-obtain_movies = function(combined_data, idx){
-  rows_data = filter(filas_ID_combined_all, data == idx)
-     rows_data = select(rows_data, fila, fila_final)
-     ranges = c()
-     for(i in 1:nrow(rows_data)){
-      ranges = c(ranges, rows_data[[i,1]]:rows_data[[i,2]])
-      }
-     combined_data = slice(combined_data, ranges)
-     return(combined_data)
-
-}
-
-
+#Leemos las observaciones de las películas de nuestra muestra
 data1 = obtain_movies(combined_data1, 1)
 data2 = obtain_movies(combined_data2, 2)
 data3 = obtain_movies(combined_data3, 3)
 data4 = obtain_movies(combined_data4, 4)
 
+#Juntamos los datos de las películas de los 4 ficheros
+df_ratings = rbind(data1,data2,data3,data4)
 
-d = rbind(data1,data2,data3,data4)
+#Exportamos los datos de las películas de nuestra muestra
+write.table(df_ratings,"data/combined_data_sample.txt", row.names = FALSE, col.names = FALSE)
+
+#Eliminamos variables que ya no son útiles
+rm(combined_data1, combined_data2, combined_data3, combined_data4,
+   data1, data2, data3, data4, filas_ID_combined_all)
 ```
 
 
 
-```{r message = FALSE}
-#Se importan 'n' observaciones del conjunto de datos 'Netflix Prize data'
-#n = 10000
-n = 352872-1 # leo las primeras 100 películas 
-dataframe = read_tsv("data/combined_data_1.txt", col_names=FALSE)
-
-#Se importa el dataframe de los datos de las películas
-n_mov = 100
-df_movies = read_csv("data/movie_titles.csv", col_names = FALSE)
-```
-
-
-
-# **Conociendo el dataframe y sus variables**
-
-TODO: Comentar...
-
-## Estructura
-```{r message=FALSE, warning=FALSE}
-#Structure 
-str_df = str(dataframe)
-```
-
-## Resumen 
-```{r message=FALSE, warning=FALSE}
-#Summary
-sum = kable(summary(dataframe))
-```
-
-
-## Primeras 10 filas
-```{r message=FALSE, warning=FALSE}
-# First 10 rows 
-head = kable(head(dataframe))
-```
-
-
-## Estructura
-```{r message=FALSE, warning=FALSE}
-#Structure 
-str_mov = str(df_movies)
-```
-
-
-
-# **Limpieza de datos**
+# **Construcción del modelo de datos**
 
 TODO: Comentar...
 
 ```{r message = FALSE}
-
-dataframe = d
 #Se asigna una posición a cada observación para posteriormente indicar el id de película de cada una de ellas
-dataframe = dataframe %>% 
-            mutate(Idx = row_number()) 
+df_ratings = df_ratings %>% 
+             mutate(Idx = row_number()) 
 
 #Guardamos la fila donde empieza cada película
-movie_rows = grep(":", dataframe$X1) 
+movie_rows = grep(":", df_ratings$X1) 
 
 #Añadimos el id de la película a cada posición y eliminamos el caracter ":"
-rows_ID = dataframe %>% 
+rows_ID = df_ratings %>% 
           filter(Idx %in% movie_rows) %>%
           mutate(X1 = as.integer(gsub(":","",X1)))
 
 #Número de veces que se tendrá que repetir el identificador de cada película
-reps = diff(c(rows_ID$Idx, max(dataframe$Idx) + 1))
-df = dataframe %>% 
+reps = diff(c(rows_ID$Idx, max(df_ratings$Idx) + 1))
+netflix = df_ratings %>% 
      mutate(MovieID = rep(rows_ID$X1, times = reps)) %>% 
      filter(!(Idx %in% rows_ID))
 
 #Se definen las columnas del dataframe
-df = df %>% 
+netflix = netflix %>% 
      separate(X1,into = c("UserID","Rating","RatingDate"), sep = ",") %>%
-     na.omit(df) %>%
+     na.omit(netflix) %>%
      mutate(Idx = row_number())
 
 #Se eliminan las variables auxiliares
-rm(dataframe, movie_rows, rows_ID, reps)
+rm(df_ratings, movie_rows, rows_ID, reps)
 ```
-
+Lectura del fichero movies_titles.csv
 ```{r}
+#Se importa el dataframe de los datos de las películas
+df_movies = read_csv("data/movie_titles.csv", col_names = FALSE)
+
 df_movies = df_movies %>% 
      rename(
       MovieID = X1,
@@ -197,35 +168,64 @@ df_movies = df_movies %>%
 
 
 ```{r}
-#Se transforma la variable 'Rating' a tipo númerica
-df$Rating = as.numeric(df$Rating)
-
-#Se transforma la variable 'RatingDate' a tipo date
-df$RatingDate = as.Date(df$RatingDate, format = "%Y-%m-%d")
-
 #Se unifica el dataframe de las puntuaciones con el de las películas
-df = merge(x = df, y = df_movies, by = "MovieID", all = TRUE)
+netflix = inner_join(x = netflix, y = df_movies, by = "MovieID", all = TRUE)
 
 #Se añade la diferencia en años entre el año de puntuación y el de estreno de la película
-df = mutate(df, YearsSinceRelease = year(RatingDate) - MovieRelease)
+netflix = mutate(netflix, YearsSinceRelease = year(RatingDate) - MovieRelease)
 
 #Se ordenan las posiciones de las columnas y se indican su nuevo nombre
-df = select(df, Idx, MovieID, Title, UserID, Rating, RatingDate, MovieRelease, YearsSinceRelease)
+netflix = select(netflix, Idx, MovieID, Title, UserID, Rating, RatingDate, MovieRelease, YearsSinceRelease)
 
+#Exportamos el fichero preparado y construido para empezar a trabajar en su análisis
+write.csv(netflix, "data/netflix.csv", row.names = FALSE)
 ```
-
-
 
 
 # **Analizando el dataframe**
 
 
 ```{r}
-glimpse(df)
-ncol(df)
-nrow(df)
-length(unique(df$UserID))
+glimpse(netflix)
+ncol(netflix)
+nrow(netflix)
+length(unique(netflix$UserID))
 ```
+
+Idx: Variable numérica que determina la posición en la cual se encuentra cada observación.
+
+MovieID: Variable numérica que identifica a cada película con un ID determinado, este ID esta asociado a un título que será dado por otra variable llamada "Title".
+
+Title: Variable con datos definidos como caracteres, esta variable nos da el título de cada una de las películas que vienen asociadas con un ID dado por la variable "MovieID".
+
+UserID: Variable con datos definidos como caractere que nos aporta la información del ID del usuario que ha calificado cada película.
+
+Rating: Variable categórica que da la calificación que ha hecho cada usuario. Esta calificación pude ser desde 1 estrella (calificación más baja) a 5 estrellas (calificación más alta).
+
+RatingDate: Variable definida como una fecha, esta variable indica la fecha en la cual el usuario realizó la calificación de una determinada película.
+
+MovieRelease: Variable numérica que indica el año en el cual se estreno la película. El año de estreno puede referirse tanto a estreno de una determinada película en el cine como en DVD.
+
+YearsSinceRelease: Variable numérica la cual se ha calculado mediante la resta de RatingDate y MovieRealese. esta avriable indica el tiempo que ha pasado desde que se ha estrenado una determinada película hasta que el usuario la ha calificado.
+
+```{r}
+#Se transforma la variable 'Rating' a tipo númerica
+netflix$Rating = as.numeric(netflix$Rating)
+
+#Se transforma la variable 'RatingDate' a tipo date
+netflix$RatingDate = as.Date(netflix$RatingDate, format = "%Y-%m-%d")
+
+#Se transforma la variable MovieRealese a numérica
+netflix$MovieRelease = as.numeric(netflix$MovieRelease)
+
+#Se transforma la variable YearsSinceRelease a numérica
+netflix$YearsSinceRelease = as.numeric(netflix$YearsSinceRelease)
+```
+
+
+
+
+
 
 
 
@@ -238,7 +238,7 @@ length(unique(df$UserID))
 Analizar número de votaciones de las diferentes películas. ¿Cuántas películas hay de cada rating (1,2,3,4 y 5 estrellas)?
 
 ```{r}
-ggplot(data = df, aes(x = Rating)) +
+ggplot(data = netflix, aes(x = Rating)) +
   geom_bar(aes(y = ..count.., fill = ..count..), 
            stat="count", 
            show.legend = FALSE) +
@@ -247,7 +247,7 @@ ggplot(data = df, aes(x = Rating)) +
             vjust = -.5) +
   scale_fill_gradient(low = "lightcoral", high = "firebrick2")+
   labs(x = "Rating", y = "Number of ratings", title = "Total Ratings")+
-  scale_y_continuous(limits=c(0,150000))+
+  scale_y_continuous(limits=c(0,380000))+
   coord_flip() + 
   theme_classic()
 
@@ -259,10 +259,10 @@ grid.raster(image, x = 0.80, y = 0.25, height = 0.23)
 
 
 ```{r}
-media = mean(df$Rating, na.rm = TRUE)
+media = mean(netflix$Rating, na.rm = TRUE)
 media
 
-moda = names(which(table(df$Rating) == max(table(df$Rating))))
+moda = names(which(table(netflix$Rating) == max(table(netflix$Rating))))
 moda
 ```
 
@@ -276,9 +276,9 @@ La calificación media de todas las películas es de 3.37.
 
 
 ```{r}
-count_movies = table(df$Title, df$Rating)
+count_movies = table(netflix$Title, netflix$Rating)
 d = as.data.frame(count_movies)
-ggplot(d, aes(x=d$MovieID, y = Freq, fill=d$Rating)) + 
+ggplot(d, aes(x=d$Var2, y = Freq, fill=d$Var1)) + 
     geom_bar(stat="identity")
 ```
 
@@ -291,7 +291,9 @@ ggplot(d, aes(x=d$MovieID, y = Freq, fill=d$Rating)) +
 
 ```{r}
 #Más votada
-df_more_voted = df[df$MovieID == which(count_mov == max(count_mov)),]
+
+count_more_voted = table(netflix$MovieID)
+df_more_voted = netflix[netflix$MovieID == 6408,]
 
 ggplot(data = df_more_voted, aes(x = Rating)) +
   geom_bar(aes(y = ..count.., fill = ..count..), 
@@ -313,7 +315,7 @@ ggplot(data = df_more_voted, aes(x = Rating)) +
 
 ```{r}
 #Menos votada
-df_less_voted = df[df$MovieID == which(count_mov == min(count_mov)),]
+df_less_voted = netflix[netflix$MovieID == which(count_mov == min(count_mov)),]
 
 ggplot(data = df_less_voted, aes(x = Rating)) +
   geom_bar(aes(y = ..count.., fill = ..count..), 
