@@ -19,8 +19,6 @@ library(magick)
 library(knitr) # dynamic report generation
 library(gridExtra) # miscellaneous Functions for "Grid" Graphics
 library(grid) # add Grid to a Plot
-rm(list=ls())
-cat("\014") ## limpia la pantalla del R
 ```
 
 <center><img
@@ -77,7 +75,7 @@ obtain_movies = function(combined_data, idx){
 
 
 Lectura de los ficheros y creación del fichero único con las películas de la muestra
-```{r}
+```{r message = FALSE, cache = TRUE}
 #Leemos el índice
 filas_ID_combined_all = read_csv("data/filas_ID_combined_all.txt")
 
@@ -112,8 +110,8 @@ df_ratings = rbind(data1,data2,data3,data4)
 write.table(df_ratings,"data/combined_data_sample.txt", row.names = FALSE, col.names = FALSE)
 
 #Eliminamos variables que ya no son útiles
-rm(combined_data1, combined_data2, combined_data3, combined_data4,
-   data1, data2, data3, data4, filas_ID_combined_all)
+#rm(combined_data1, combined_data2, combined_data3, combined_data4,
+#   data1, data2, data3, data4, filas_ID_combined_all)
 ```
 
 
@@ -122,7 +120,7 @@ rm(combined_data1, combined_data2, combined_data3, combined_data4,
 
 TODO: Comentar...
 
-```{r message = FALSE}
+```{r message = FALSE, warning = FALSE, cache = TRUE}
 #Se asigna una posición a cada observación para posteriormente indicar el id de película de cada una de ellas
 df_ratings = df_ratings %>% 
              mutate(Idx = row_number()) 
@@ -148,10 +146,10 @@ netflix = netflix %>%
      mutate(Idx = row_number())
 
 #Se eliminan las variables auxiliares
-rm(df_ratings, movie_rows, rows_ID, reps)
+#rm(df_ratings, movie_rows, rows_ID, reps)
 ```
 Lectura del fichero movies_titles.csv
-```{r}
+```{r message = FALSE, warning = FALSE, cache = TRUE}
 #Se importa el dataframe de los datos de las películas
 df_movies = read_csv("data/movie_titles.csv", col_names = FALSE)
 
@@ -167,7 +165,7 @@ df_movies = df_movies %>%
 
 
 
-```{r}
+```{r, cache = TRUE}
 #Se unifica el dataframe de las puntuaciones con el de las películas
 netflix = inner_join(x = netflix, y = df_movies, by = "MovieID", all = TRUE)
 
@@ -187,26 +185,23 @@ write.csv(netflix, "data/netflix.csv", row.names = FALSE)
 
 ```{r}
 glimpse(netflix)
-ncol(netflix)
-nrow(netflix)
-length(unique(netflix$UserID))
 ```
 
-Idx: Variable numérica que determina la posición en la cual se encuentra cada observación.
+* **Idx:** Variable numérica que determina la posición o índice de cada observación del dataset.
 
-MovieID: Variable numérica que identifica a cada película con un ID determinado, este ID esta asociado a un título que será dado por otra variable llamada "Title".
+* **MovieID:** Variable numérica que identifica a cada película con un ID determinado, este ID está asociado a un título que será representado por la variable *"Title"*.
 
-Title: Variable con datos definidos como caracteres, esta variable nos da el título de cada una de las películas que vienen asociadas con un ID dado por la variable "MovieID".
+* **Title:** Variable con datos definidos como caracteres. Esta variable representa el título de cada una de las películas identificadas con un ID en la variable *"MovieID"*.
 
-UserID: Variable con datos definidos como caractere que nos aporta la información del ID del usuario que ha calificado cada película.
+* **UserID:** Variable con datos definidos como caracteres que representa el ID único del usuario que ha calificado cada película.
 
-Rating: Variable categórica que da la calificación que ha hecho cada usuario. Esta calificación pude ser desde 1 estrella (calificación más baja) a 5 estrellas (calificación más alta).
+* **Rating:** Variable categórica que representa la calificación que ha hecho cada usuario de las películas que ha puntuado. Esta calificación puede ser dentro del rango [1,2,3,4,5], donde 1 estrella representa la calificación más baja y 5 estrellas la calificación más alta.
 
-RatingDate: Variable definida como una fecha, esta variable indica la fecha en la cual el usuario realizó la calificación de una determinada película.
+* **RatingDate:** Variable definida como tipo **date*, que representa la fecha en la cual el usuario realizó la calificación de una determinada película.
 
-MovieRelease: Variable numérica que indica el año en el cual se estreno la película. El año de estreno puede referirse tanto a estreno de una determinada película en el cine como en DVD.
+* **MovieRelease:** Variable numérica que indica el año en el cual se estrenó la película. El año de estreno puede referirse tanto a estreno de una determinada película en el cine como en DVD.
 
-YearsSinceRelease: Variable numérica la cual se ha calculado mediante la resta de RatingDate y MovieRealese. esta avriable indica el tiempo que ha pasado desde que se ha estrenado una determinada película hasta que el usuario la ha calificado.
+* **YearsSinceRelease:** Variable numérica la cual se ha calculado mediante la resta de RatingDate y MovieRelease. Esta variable indica el número de años que ha pasado desde que se ha estrenado una determinada película hasta que el usuario la ha calificado.
 
 ```{r}
 #Se transforma la variable 'Rating' a tipo númerica
@@ -239,7 +234,7 @@ ggplot(data = netflix, aes(x = Rating)) +
             vjust = -.5) +
   scale_fill_gradient(low = "lightcoral", high = "firebrick2")+
   labs(x = "Rating", y = "Number of ratings", title = "Total Ratings")+
-  scale_y_continuous(limits=c(0,380000))+
+  scale_y_continuous(limits=c(0,380000), labels = scales::comma)+
   coord_flip() + 
   theme_classic()
 
@@ -268,11 +263,6 @@ La calificación media de todas las películas es de 3.37.
 
 
 ```{r}
-count_movies = table(netflix$Title, netflix$Rating)
-"d = as.data.frame(count_movies)
-ggplot(d, aes(x=d$Var2, y = Freq, fill=d$Var1)) + 
-    geom_bar(stat="identity") "
-
 #Comentar con Camila
 netflix %>%
   count(YearsSinceRelease, Rating) %>%
@@ -288,11 +278,27 @@ ggplot(mapping = aes(x = YearsSinceRelease, y = Rating))+
 
 ### Película más votada y menos votada (gráfico palabras)
 
+
+
+
+```{r}
+movies_table = table(netflix$MovieID)
+```
+
+```{python}
+#Python uses pandas describe
+
+```
+
+
+
+
+
+
+
 ```{r}
 #Más votada
-
-count_more_voted = table(netflix$MovieID)
-df_more_voted = netflix[netflix$MovieID == 6408,]
+df_more_voted = netflix[netflix$MovieID == names(which.max(movies_table)),]
 
 ggplot(data = df_more_voted, aes(x = Rating)) +
   geom_bar(aes(y = ..count.., fill = ..count..), 
@@ -314,8 +320,8 @@ grid.raster(image, x = 0.80, y = 0.35, height = 0.4)
 
 ```{r}
 #Menos votada
-#df_less_voted = netflix[netflix$MovieID == which(count_mov == min(count_mov)),]
-df_less_voted = netflix[netflix$MovieID == 6256,]
+df_less_voted = netflix[netflix$MovieID == names(which.min(movies_table)),]
+
 ggplot(data = df_less_voted, aes(x = Rating)) +
   geom_bar(aes(y = ..count.., fill = ..count..), 
            stat="count", 
