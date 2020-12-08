@@ -223,14 +223,6 @@ netflix$YearsSinceRelease = as.numeric(netflix$YearsSinceRelease)
 ```
 
 
-
-
-
-
-
-
-
-
 ## Calificaciones de las películas
 
 ### Calificación general 
@@ -277,9 +269,16 @@ La calificación media de todas las películas es de 3.37.
 
 ```{r}
 count_movies = table(netflix$Title, netflix$Rating)
-d = as.data.frame(count_movies)
+"d = as.data.frame(count_movies)
 ggplot(d, aes(x=d$Var2, y = Freq, fill=d$Var1)) + 
-    geom_bar(stat="identity")
+    geom_bar(stat="identity") "
+
+#Comentar con Camila
+netflix %>%
+  count(YearsSinceRelease, Rating) %>%
+ggplot(mapping = aes(x = YearsSinceRelease, y = Rating))+
+  geom_tile(mapping = aes(fill = n))
+
 ```
 
 
@@ -304,19 +303,19 @@ ggplot(data = df_more_voted, aes(x = Rating)) +
             vjust = -.5) +
   scale_fill_gradient(low = "cadetblue1", high = "cadetblue4")+
   labs(x = "Rating", y = "Number of ratings", title = df_more_voted$Title[1])+
-  scale_y_continuous(limits=c(0,60000))+
+  scale_y_continuous(limits=c(0,45000))+
   coord_flip() + 
   theme_classic()
 
-# Image in the visualization 
-#image = image_read("imgs/mejor.jpg") 
-#grid.raster(image, x = 0.80, y = 0.35, height = 0.4)
+#Image in the visualization 
+image = image_read("imgs/masvotada.jpg") 
+grid.raster(image, x = 0.80, y = 0.35, height = 0.4)
 ```
 
 ```{r}
 #Menos votada
-df_less_voted = netflix[netflix$MovieID == which(count_mov == min(count_mov)),]
-
+#df_less_voted = netflix[netflix$MovieID == which(count_mov == min(count_mov)),]
+df_less_voted = netflix[netflix$MovieID == 6256,]
 ggplot(data = df_less_voted, aes(x = Rating)) +
   geom_bar(aes(y = ..count.., fill = ..count..), 
            stat="count", 
@@ -324,17 +323,21 @@ ggplot(data = df_less_voted, aes(x = Rating)) +
   geom_label(aes(label = ..count.., y = ..count..), 
             stat = "count",
             vjust = -.5) +
-  scale_fill_gradient(low = "cadetblue1", high = "cadetblue4")+
+  scale_fill_gradient(low = "darkgoldenrod1", high = "darkgoldenrod3")+
   labs(x = "Rating", y = "Number of ratings", title = df_less_voted$Title[1])+
-  scale_y_continuous(limits=c(0,50))+
+  scale_y_continuous(limits=c(0,8))+
   coord_flip() + 
   theme_classic()
 
 # Image in the visualization 
-#image = image_read("imgs/mejor.jpg") 
-#grid.raster(image, x = 0.80, y = 0.35, height = 0.4)
+image = image_read("imgs/menosvotada.jpg") 
+grid.raster(image, x = 0.80, y = 0.35, height = 0.4)
 ```
 
+```{r}
+calif = table(netflix$MovieID, netflix$Rating)
+
+```
 
 ## Relación fecha puntuación / calificación
 
