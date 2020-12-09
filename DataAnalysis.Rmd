@@ -19,6 +19,8 @@ library(magick)
 library(knitr) # dynamic report generation
 library(gridExtra) # miscellaneous Functions for "Grid" Graphics
 library(grid) # add Grid to a Plot
+library(reticulate)
+py_install("pandas")
 ```
 
 <center><img
@@ -230,10 +232,26 @@ netflix$YearsSinceRelease = as.numeric(netflix$YearsSinceRelease)
 ## Tabla resumen del número de calificaciones
 ```{r}
 calif = table(netflix$MovieID, netflix$Rating)
-calif
 
 #Añadir la media, la desviación típica, la moda y la mediana.
 ```
+
+```{python}
+import pandas as pd
+netflix_py = pd.read_csv("data/netflix.csv")
+
+
+aa =netflix_py.loc[,"MovieID"]
+print(aa)
+
+a = netflix_py.describe()
+
+print(a)
+```
+
+
+
+
 
 ## Comparación de las 5 películas con mayor número de calificaciones
 ```{r}
@@ -323,7 +341,14 @@ movies_table = table(netflix$MovieID)
 
 ```{python}
 #Python uses pandas describe
-
+import pandas as pd
+netflix_py = pd.read_csv("data/netflix.csv")
+res = pd.concat([netflix_py.groupby('MovieID')['Rating'].describe(),
+                      netflix_py.groupby('MovieID')['Rating'].agg(pd.Series.mode).rename('mode'),
+                      netflix_py.groupby('MovieID')['Rating'].agg(pd.Series.median).rename('median')
+                     ], axis=1).T
+                     
+print(res)
 ```
 
 
