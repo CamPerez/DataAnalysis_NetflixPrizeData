@@ -234,9 +234,41 @@ calif
 
 #Añadir la media, la desviación típica, la moda y la mediana.
 ```
+```{r}
+library(reticulate)
+conda_create("r-reticulate")
+conda_install("r-reticulate", "pandas")
+py_install("pandas")
+```
+```{python}
+import pandas as pd
+netflix_py = pd.read_csv("data/netflix.csv")
+print(netflix_py)
+```
+
 
 ## Comparación de las 5 películas con mayor número de calificaciones
 ```{r}
+movies_table = table(netflix$MovieID)
+
+#Ordenamos las MovieID en función del número de calificaciones y de forma descendente:
+orden = sort(movies_table, decreasing = TRUE)
+#Pedimos que nos imprima las 5 primeras observaciones, para obtener asi las 5 películas más votadas:
+head(orden, 5)
+#Una vez sabemos el MovieID de las películas más votadas las filtramos:
+mas_votadas = filter(netflix, MovieID == c("6408","2580","3610","2186","11663"))
+mas_votadas = as.data.frame(mas_votadas)
+#Representamos
+
+#boxplot(MovieID~Rating, data=mas_votadas)
+
+#ggplot(data = mas_votadas, mapping = aes(x=MovieID, y=Rating, group=MovieID)) +
+#  geom_boxplot()
+
+ggplot(mas_votadas,aes(Title, Rating, group=MovieID))+
+  geom_boxplot(fill = "darkseagreen1", colour = "black", outlier.colour = "darkgreen")+
+   geom_point(stat= "summary", fun.y=mean, shape=20, size=3, color="red") 
+```
 #Compara sus estadísticos y distribuciones(histogramas, boxplot, violin plot,. . . )
 ```
 
@@ -317,9 +349,6 @@ ggplot(mapping = aes(x = YearsSinceRelease, y = Rating))+
 
 
 
-```{r}
-movies_table = table(netflix$MovieID)
-```
 
 ```{python}
 #Python uses pandas describe
@@ -378,6 +407,7 @@ grid.raster(image, x = 0.80, y = 0.35, height = 0.4)
 
 ```{r}
 calif = table(netflix$MovieID, netflix$Rating)
+calif
 
 ```
 
