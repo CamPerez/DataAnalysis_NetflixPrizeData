@@ -158,9 +158,26 @@ df_movies = read_tsv("data/movie_titles.csv", locale = readr::locale(encoding = 
 df_movies = df_movies %>% 
             separate(X1,",",into =c("MovieID","MovieRelease","Title"), extra="merge")
 
+df_movies$MovieID = as.numeric(df_movies$MovieID)
+netflix$MovieID = as.numeric(netflix$MovieID)
+
+
 ```
 
+```{r}
+#Se transforma la variable 'Rating' a tipo númerica
+netflix$Rating = as.numeric(netflix$Rating)
 
+#Se transforma la variable 'RatingDate' a tipo date
+netflix$RatingDate = as.Date(netflix$RatingDate, format = "%Y-%m-%d")
+
+#Se transforma la variable MovieRealese a numérica
+netflix$MovieRelease = as.numeric(netflix$MovieRelease)
+
+#Se transforma la variable YearsSinceRelease a numérica
+netflix$YearsSinceRelease = as.numeric(netflix$YearsSinceRelease)
+
+```
 
 
 ```{r, cache = TRUE}
@@ -211,20 +228,7 @@ str(netflix)
 
 * **YearsSinceRelease:** Variable numérica la cual se ha calculado mediante la resta de RatingDate y MovieRelease. Esta variable indica el número de años que ha pasado desde que se ha estrenado una determinada película hasta que el usuario la ha calificado.
 
-```{r}
-#Se transforma la variable 'Rating' a tipo númerica
-netflix$Rating = as.numeric(netflix$Rating)
 
-#Se transforma la variable 'RatingDate' a tipo date
-netflix$RatingDate = as.Date(netflix$RatingDate, format = "%Y-%m-%d")
-
-#Se transforma la variable MovieRealese a numérica
-netflix$MovieRelease = as.numeric(netflix$MovieRelease)
-
-#Se transforma la variable YearsSinceRelease a numérica
-netflix$YearsSinceRelease = as.numeric(netflix$YearsSinceRelease)
-
-```
 
 ## Tabla resumen del número de calificaciones
 ```{r}
@@ -234,31 +238,12 @@ calif = table(netflix$MovieID, netflix$Rating)
 ```
 ```{r}
 library(reticulate)
-conda_create("r-reticulate")
-conda_install("r-reticulate", "pandas")
-py_install("pandas")
 ```
 ```{python}
 import pandas as pd
 netflix_py = pd.read_csv("data/netflix.csv")
 print(netflix_py)
 ```
-
-
-```{python}
-import pandas as pd
-netflix_py = pd.read_csv("data/netflix.csv")
-
-
-aa =netflix_py.loc[,"MovieID"]
-print(aa)
-
-a = netflix_py.describe()
-
-print(a)
-```
-
-
 
 
 
