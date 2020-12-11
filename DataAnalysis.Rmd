@@ -153,10 +153,10 @@ rm(df_ratings, movie_rows, rows_ID, reps)
 Lectura del fichero movies_titles.csv
 
 ```{r message = FALSE, warning = FALSE, cache = TRUE}
-#Se importa el dataframe de los datos de las películas
-df_movies = read.csv("data/movie_titles.csv",  col.names= c("MovieID", "MovieRelease", "Title", "Title2", "Title3", "Title4"), fill=TRUE, sep = ",")
+df_movies = read_tsv("data/movie_titles.csv", locale = readr::locale(encoding = "ISO-8859-1"), col_names=FALSE)
 
-df_movies = unite(df_movies, Title, Title, Title2, Title3, Title4, sep = "")
+df_movies = df_movies %>% 
+            separate(X1,",",into =c("MovieID","MovieRelease","Title"), extra="merge")
 
 ```
 
