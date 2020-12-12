@@ -10,9 +10,10 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
 knitr::kable
 library(tidyverse)
+library(plotly)
 library(lubridate) #Trabajar con fechas
 library(ggimage) #Gggplot images
 library(magick)
@@ -120,7 +121,6 @@ rm(combined_data1, combined_data2, combined_data3, combined_data4, data1, data2,
 # **Construcción del modelo de datos**
 
 TODO: Comentar...
-
 ```{r message = FALSE, warning = FALSE, cache = TRUE}
 #Se asigna una posición a cada observación para posteriormente indicar el id de película de cada una de ellas
 df_ratings = df_ratings %>% 
@@ -158,6 +158,7 @@ df_movies = read_tsv("data/movie_titles.csv", locale = readr::locale(encoding = 
 df_movies = df_movies %>% 
             separate(X1,",",into =c("MovieID","MovieRelease","Title"), extra="merge")
 
+df_movies = filter(df_movies, df_movies$MovieID %in% muestra_grupo)
 ```
 
 
@@ -225,14 +226,15 @@ str(netflix)
 
 
 ## Tabla resumen del número de calificaciones
-```{r}
-calif = table(netflix$MovieID, netflix$Rating)
-```
-
 ```{python}
 import pandas as pd
 netflix_py = pd.read_csv("data/netflix.csv")
-print(netflix_py)
+res = pd.concat([netflix_py.groupby('MovieID')['Rating'].describe(),
+                      netflix_py.groupby('MovieID')['Rating'].agg(pd.Series.mode).rename('mode'),
+                      netflix_py.groupby('MovieID')['Rating'].agg(pd.Series.median).rename('median')
+                     ], axis=1).T
+                     
+print(res)
 ```
 
 
@@ -246,18 +248,15 @@ orden = sort(movies_table, decreasing = TRUE)
 #Pedimos que nos imprima las 5 primeras observaciones, para obtener asi las 5 películas más votadas:
 head(orden, 5)
 #Una vez sabemos el MovieID de las películas más votadas las filtramos:
-mas_votadas = filter(netflix, MovieID == c("6408","2580","3610","2186","11663"))
+mas_votadas = filter(netflix, MovieID == names(orden[1:5]))
 mas_votadas = as.data.frame(mas_votadas)
+
 #Representamos
-
-#boxplot(MovieID~Rating, data=mas_votadas)
-
-#ggplot(data = mas_votadas, mapping = aes(x=MovieID, y=Rating, group=MovieID)) +
-#  geom_boxplot()
-
-ggplot(mas_votadas,aes(Title, Rating, group=MovieID))+
+boxplot = ggplot(mas_votadas,aes(Title, Rating, group=MovieID))+
   geom_boxplot(fill = "darkseagreen1", colour = "black", outlier.colour = "darkgreen")+
-   geom_point(stat= "summary", fun.y=mean, shape=20, size=3, color="red") 
+   geom_point(stat= "summary", shape=20, size=2, color="red") 
+ggplotly(boxplot)
+
 ```
 #Compara sus estadísticos y distribuciones(histogramas, boxplot, violin plot,. . . )
 ```
@@ -299,7 +298,6 @@ ggplot(data = netflix, aes(x = Rating)) +
 # Image in the visualization 
 image = image_read("imgs/icon-rating.png") 
 grid.raster(image, x = 0.80, y = 0.25, height = 0.23)
-
 ```
 
 
@@ -335,27 +333,6 @@ ggplot(mapping = aes(x = YearsSinceRelease, y = Rating))+
 ### Película con mejor y peor calificación (gráfico palabras)
 
 ### Película más votada y menos votada (gráfico palabras)
-
-
-
-
-
-```{python}
-#Python uses pandas describe
-import pandas as pd
-netflix_py = pd.read_csv("data/netflix.csv")
-res = pd.concat([netflix_py.groupby('MovieID')['Rating'].describe(),
-                      netflix_py.groupby('MovieID')['Rating'].agg(pd.Series.mode).rename('mode'),
-                      netflix_py.groupby('MovieID')['Rating'].agg(pd.Series.median).rename('median')
-                     ], axis=1).T
-                     
-print(res)
-```
-
-
-
-
-
 
 
 ```{r}
