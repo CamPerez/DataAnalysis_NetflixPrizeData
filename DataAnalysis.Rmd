@@ -158,34 +158,29 @@ df_movies = read_tsv("data/movie_titles.csv", locale = readr::locale(encoding = 
 df_movies = df_movies %>% 
             separate(X1,",",into =c("MovieID","MovieRelease","Title"), extra="merge")
 
-df_movies$MovieID = as.numeric(df_movies$MovieID)
-netflix$MovieID = as.numeric(netflix$MovieID)
-
-
 ```
 
-```{r}
+
+
+```{r, cache = TRUE}
+#Se transforma la variable MovieRelease a numérica
+netflix$MovieID = as.character(netflix$MovieID)
+#Se unifica el dataframe de las puntuaciones con el de las películas
+netflix = inner_join(x = netflix, y = df_movies, by = "MovieID", all = TRUE)
+
 #Se transforma la variable 'Rating' a tipo númerica
 netflix$Rating = as.numeric(netflix$Rating)
 
 #Se transforma la variable 'RatingDate' a tipo date
 netflix$RatingDate = as.Date(netflix$RatingDate, format = "%Y-%m-%d")
 
-#Se transforma la variable MovieRealese a numérica
+#Se transforma la variable MovieRelease a numérica
 netflix$MovieRelease = as.numeric(netflix$MovieRelease)
-
-#Se transforma la variable YearsSinceRelease a numérica
-netflix$YearsSinceRelease = as.numeric(netflix$YearsSinceRelease)
-
-```
-
-
-```{r, cache = TRUE}
-#Se unifica el dataframe de las puntuaciones con el de las películas
-netflix = inner_join(x = netflix, y = df_movies, by = "MovieID", all = TRUE)
 
 #Se añade la diferencia en años entre el año de puntuación y el de estreno de la película
 netflix = mutate(netflix, YearsSinceRelease = year(RatingDate) - MovieRelease)
+#Se transforma la variable YearsSinceRelease a numérica
+netflix$YearsSinceRelease = as.numeric(netflix$YearsSinceRelease)
 
 #Adicionalmente, dividimos la variable RatingDate en: día, mes y año
 sep = netflix %>%
@@ -194,11 +189,10 @@ sep = netflix %>%
   mutate(Idx = row_number())
 
 netflix = mutate(netflix, sep)
+rm(sep)
 
 #Se ordenan las posiciones de las columnas y se indican su nuevo nombre
 netflix = select(netflix, Idx, MovieID, Title, UserID, Rating, Day, Month, Year, RatingDate, MovieRelease,  YearsSinceRelease)
-
-rm(sep)
 
 #Exportamos el fichero preparado y construido para empezar a trabajar en su análisis
 write.csv(netflix, "data/netflix.csv", row.names = FALSE)
@@ -233,12 +227,8 @@ str(netflix)
 ## Tabla resumen del número de calificaciones
 ```{r}
 calif = table(netflix$MovieID, netflix$Rating)
+```
 
-#Añadir la media, la desviación típica, la moda y la mediana.
-```
-```{r}
-library(reticulate)
-```
 ```{python}
 import pandas as pd
 netflix_py = pd.read_csv("data/netflix.csv")
