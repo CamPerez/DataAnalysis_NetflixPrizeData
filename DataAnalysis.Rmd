@@ -277,7 +277,7 @@ ggplot(movies_table_title, aes(label = Var1, size = Freq, color = Freq, angle = 
 ```
 
 #Compara sus estadísticos y distribuciones(histogramas, boxplot, violin plot,. . . )
-```
+
 ## Distribución de calificaciones por año
 
 ```{r}
@@ -308,22 +308,28 @@ ggplot(data = netflix) +
   
 #Investiga la distribución de valoraciones por día de la semana y por mes.¿Qué meses y días de la semana se valoran más películas en netflix?
 ```
+
+
 ## Las 10 películas más votadas
 ```{r}
 #Tabla agrupada por película y año del número de valoraciones.
 tabla = table(netflix$MovieID, netflix$Year)
 tabla = as.data.frame(tabla)
-
-names(orden[1:10])
-
-ggplot(tabla, aes(x = Var2, y = Freq))+
-geom_line()
-
+tabla = filter(tabla, Var1 %in% names(orden[1:10]))
 #Representación gráfica.
-
-#Distribución del score promedio por año.
-tabla2 = table(netflix$MovieID, netflix$Year)
+ggplot(tabla, aes(x = Var2, y = Freq, group = Var1))+
+geom_line()
 ```
+
+```{r}
+#Distribución del score promedio por año.
+a = filter (netflix, MovieID %in% names(orden[1:10]))
+
+res =  a %>%
+  group_by(MovieID, Year) %>%
+  summarise(mean = mean(Rating))
+```
+
 
 
 ## Calificaciones de las películas
