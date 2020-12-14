@@ -15,3 +15,7 @@ knitr
 gridExtra
 reticulate
 plotly
+RColorBrewer
+wordcloud
+wordcloud2
+ggwordcloud

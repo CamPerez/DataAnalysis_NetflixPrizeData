@@ -16,12 +16,14 @@ library(tidyverse)
 library(plotly)
 library(lubridate) #Trabajar con fechas
 library(ggimage) #Gggplot images
+library(wordcloud) # word cloud generator
+library(wordcloud2) # word cloud generator
+library(ggwordcloud)
 library(magick)
 library(knitr) # dynamic report generation
 library(gridExtra) # miscellaneous Functions for "Grid" Graphics
 library(grid) # add Grid to a Plot
 library(reticulate)
-py_install("pandas")
 ```
 
 <center><img
@@ -238,6 +240,9 @@ print(res)
 ```
 
 
+
+
+
 ## Comparación de las 5 películas con mayor número de calificaciones
 ```{r}
 movies_table = table(netflix$MovieID)
@@ -255,8 +260,22 @@ boxplot = ggplot(mas_votadas,aes(Title, Rating, group=MovieID))+
   geom_boxplot(fill = "darkseagreen1", colour = "black", outlier.colour = "darkgreen")+
    geom_point(stat= "summary", shape=20, size=2, color="red") 
 ggplotly(boxplot)
-
 ```
+
+
+
+```{r}
+movies_table_title = sort(table(netflix$Title), decreasing = TRUE)
+movies_table_title = as.data.frame(movies_table_title)
+
+set.seed(42)
+ggplot(movies_table_title, aes(label = Var1, size = Freq, color = Freq, angle = sample(c(45,60,90,120,145,0,15,30), 250, replace = TRUE))) +
+  geom_text_wordcloud_area(mask = png::readPNG("imgs/netflix-mask2.png"),
+    rm_outside = TRUE) +
+  scale_color_gradient(low = "indianred1", high = "red2") +
+  theme(panel.background = element_rect(fill = "black"))
+```
+
 #Compara sus estadísticos y distribuciones(histogramas, boxplot, violin plot,. . . )
 ```
 ## Distribución de calificaciones por año
@@ -356,7 +375,6 @@ netflix %>%
   count(YearsSinceRelease, Rating) %>%
 ggplot(mapping = aes(x = YearsSinceRelease, y = Rating))+
   geom_tile(mapping = aes(fill = n))
-
 ```
 
 
