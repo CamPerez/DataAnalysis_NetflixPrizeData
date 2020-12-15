@@ -5,6 +5,9 @@ date: "20/11/2020"
 output:
   html_document:
     toc: yes
+    code_folding: hide
+    theme: cosmo
+    highlight: tango
   pdf_document:
     toc: yes
 ---
@@ -14,6 +17,7 @@ knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
 knitr::kable
 library(tidyverse)
 library(plotly)
+library(shiny)
 library(lubridate) #Trabajar con fechas
 library(ggimage) #Gggplot images
 library(wordcloud) # word cloud generator
@@ -25,9 +29,9 @@ library(gridExtra) # miscellaneous Functions for "Grid" Graphics
 library(grid) # add Grid to a Plot
 library(reticulate)
 ```
-
+#<div style="text-align: justify">
 <center><img
-src="imgs/netflix-intro2.gif">
+src="imgs/netflix-intro3.gif">
 </center>
 
 
@@ -38,32 +42,32 @@ En el presente estudio se procederá a analizar el data set llamado *"Netflix Pr
 Antes de extraer la información y comenzar a trabajar sobre ella se ha procedido a visualizar a qué tipo de datos íbamos a enfrentarnos. El dataset contiene diversos archivos pero solo nos centraremos con los que vamos a trabajar en este estudio: 
 
 
-#### Combined Data
+### Combined Data
 
 Los archivos *'combined_data_{nº}'* contienen la información de las puntuaciones de los usuarios para determinado código de película, así como el identificador de usuario y la fecha (día, mes y año) en la que se dio dicha valoración. 
 
-Esta base de datos cuenta con un tamaño de espacio en memoria demasiado elevado, por lo que se procederá a extraer una parte de los datos y nos quedaremos con las 100 primeras películas de cada archivo.
+Esta base de datos cuenta con un tamaño de espacio en memoria demasiado elevado, por lo que se procederá a extraer los datos de 250 películas escogidas de manera aleatoria con una semilla ("2495"). 
 
 
-#### Movie titles
+### Movie titles
 
-Otro de los archivos que se utilizarán en este estudio contiene el título de cada ID asociado a las películas además del año en el que se estrenó. En secciones posteriores explicaremos como realizaremos la inclusión de estos datos junto con los datos iniciales para obtener el dataset final para trabajar más comodamente.
+Otro de los archivos que se utilizarán en este estudio contiene el título de cada ID asociado a las películas además del año en el que se estrenó. En secciones posteriores explicaremos como realizaremos la inclusión de estos datos junto con los datos iniciales para obtener el dataset final con el que trabajaremos de forma más cómoda.
 
 
-Una vez realizado este proceso, pensamos en generar nuevas variables para incluirlas en nuestro estudio ya que sería interesante medir la diferencia de años transcurridos desde el estreno hasta la puntuación de las diferentes películas ("YearsSinceRelease").
+Una vez realizado este proceso generaremos una nueva variable para incluirla en nuestro estudio ya que sería interesante medir la diferencia de años transcurridos desde el estreno hasta la puntuación de las diferentes películas ("YearsSinceRelease").
 
 
 # **Carga y lectura de datos**
 
-TODO: Comentar...
+El primer paso para realizar la carga de datos es leer el fichero *"filas_ID_combined_all.txt"* de donde obtendremos por cada ID de película el número del fichero donde se encuentran las puntuaciones de cada usuario y las posiciones de la fila inicial y final de estas. De la misma forma, cargaremos los cuatro ficheros *'combined_data_{nº}'* con la información de las puntuaciones de las películas.
 
-Función 
+Ya que el fichero *"filas_ID_combined_all.txt"* cuenta con la información de todas las películas, después de exportarlo realizaremos un filtrado para quedarnos solo con las filas de las 250 películas que nos interesan estudiar. Seguidamente, utilizaremos la función *obtain_movies* para que, pasados los parámetros del fichero *"filas_ID_combined_all.txt"* y el ID de *'combined_data_{nº}'*, calculemos todas las posiciones a leer y nos devuelva un *combined_data* con solo las observaciones de las películas que sabemos que se encuentran en dicho fichero. 
 
 ```{r}
 #Función que obtiene los datos de filas específicas
-obtain_movies = function(combined_data, idx){
+obtain_movies = function(index_data, combined_data, idx){
   #Obtenemos las películas del archivo a leer (1,2,3 o 4)
-  rows_data = filter(filas_ID_combined_all, data == idx)
+  rows_data = filter(index_data, data == idx)
   rows_data = select(rows_data, fila, fila_final)
   
   #Por cada fila guardamos el rango de posiciones a leer en el fichero
@@ -78,8 +82,6 @@ obtain_movies = function(combined_data, idx){
 }
 ```
 
-
-Lectura de los ficheros y creación del fichero único con las películas de la muestra
 ```{r message = FALSE, cache = TRUE}
 #Leemos el índice
 filas_ID_combined_all = read_csv("data/filas_ID_combined_all.txt")
@@ -103,10 +105,10 @@ filas_ID_combined_all = select(filas_ID_combined_all, ID, fila, fila_final, data
 #table(filas_ID_combined_all$data)
 
 #Leemos las observaciones de las películas de nuestra muestra
-data1 = obtain_movies(combined_data1, 1)
-data2 = obtain_movies(combined_data2, 2)
-data3 = obtain_movies(combined_data3, 3)
-data4 = obtain_movies(combined_data4, 4)
+data1 = obtain_movies(filas_ID_combined_all, combined_data1, 1)
+data2 = obtain_movies(filas_ID_combined_all, combined_data2, 2)
+data3 = obtain_movies(filas_ID_combined_all, combined_data3, 3)
+data4 = obtain_movies(filas_ID_combined_all, combined_data4, 4)
 
 #Juntamos los datos de las películas de los 4 ficheros
 df_ratings = rbind(data1,data2,data3,data4)
@@ -119,10 +121,11 @@ rm(combined_data1, combined_data2, combined_data3, combined_data4, data1, data2,
 ```
 
 
-
 # **Construcción del modelo de datos**
 
-TODO: Comentar...
+
+Una vez hemos exportado los ficheros necesarios y filtrado las observaciones de interés, procedemos a la limpieza de datos y construcción del modelo de datos final. Generamos un dataframe que por cada observación contenga: ID de la película, ID de usuario, calificación y fecha de calificación.
+
 ```{r message = FALSE, warning = FALSE, cache = TRUE}
 #Se asigna una posición a cada observación para posteriormente indicar el id de película de cada una de ellas
 df_ratings = df_ratings %>% 
@@ -152,22 +155,22 @@ netflix = netflix %>%
 rm(df_ratings, movie_rows, rows_ID, reps)
 ```
 
-Lectura del fichero movies_titles.csv
+Con el objectivo de completar nuestro dataset, realizamos la unión de la tibble *netflix* con los datos exportados del fichero *movies_titles.csv*, añadiendo así la variable del nombre de la película y el año de estreno. Una vez se ha realizado el *inner join*, se procede al cambio de tipo de cada variable para que concuerde con la información que representan. 
 
-```{r message = FALSE, warning = FALSE, cache = TRUE}
+
+```{r, message = FALSE, cache = TRUE}
+#Lectura del fichero movie_titles.csv
 df_movies = read_tsv("data/movie_titles.csv", locale = readr::locale(encoding = "ISO-8859-1"), col_names=FALSE)
 
 df_movies = df_movies %>% 
             separate(X1,",",into =c("MovieID","MovieRelease","Title"), extra="merge")
 
 df_movies = filter(df_movies, df_movies$MovieID %in% muestra_grupo)
-```
 
 
-
-```{r, cache = TRUE}
 #Se transforma la variable MovieRelease a numérica
 netflix$MovieID = as.character(netflix$MovieID)
+
 #Se unifica el dataframe de las puntuaciones con el de las películas
 netflix = inner_join(x = netflix, y = df_movies, by = "MovieID", all = TRUE)
 
@@ -182,6 +185,7 @@ netflix$MovieRelease = as.numeric(netflix$MovieRelease)
 
 #Se añade la diferencia en años entre el año de puntuación y el de estreno de la película
 netflix = mutate(netflix, YearsSinceRelease = year(RatingDate) - MovieRelease)
+
 #Se transforma la variable YearsSinceRelease a numérica
 netflix$YearsSinceRelease = as.numeric(netflix$YearsSinceRelease)
 
@@ -202,22 +206,23 @@ write.csv(netflix, "data/netflix.csv", row.names = FALSE)
 ```
 
 
-# **Analizando el dataframe**
+# **Analizando nuestros datos**
 
+Una vez tenemos la tibble final sobre la que vamos a trabajar, procedemos a estudiar su estructura: 
 
-```{r}
+```{r echo = FALSE}
 str(netflix)
 ```
 
 * **Idx:** Variable numérica que determina la posición o índice de cada observación del dataset.
 
-* **MovieID:** Variable numérica que identifica a cada película con un ID determinado, este ID está asociado a un título que será representado por la variable *"Title"*.
+* **MovieID:** Variable [TODO] que identifica a cada película con un ID determinado, este ID está asociado a un título que será representado por la variable *"Title"*.
 
 * **Title:** Variable con datos definidos como caracteres. Esta variable representa el título de cada una de las películas identificadas con un ID en la variable *"MovieID"*.
 
-* **UserID:** Variable con datos definidos como caracteres que representa el ID único del usuario que ha calificado cada película.
+* **UserID:** Variable con datos definidos como caracteres que representa el ID único del usuario que ha calificado la película.
 
-* **Rating:** Variable categórica que representa la calificación que ha hecho cada usuario de las películas que ha puntuado. Esta calificación puede ser dentro del rango [1,2,3,4,5], donde 1 estrella representa la calificación más baja y 5 estrellas la calificación más alta.
+* **Rating:** Variable numérica ordinal que representa la calificación que ha hecho cada usuario de las películas que ha puntuado. Esta calificación puede ser dentro del rango [1,2,3,4,5], donde 1 estrella representa la calificación más baja y 5 estrellas la calificación más alta.
 
 * **RatingDate:** Variable definida como tipo **date*, que representa la fecha en la cual el usuario realizó la calificación de una determinada película.
 
@@ -226,119 +231,13 @@ str(netflix)
 * **YearsSinceRelease:** Variable numérica la cual se ha calculado mediante la resta de RatingDate y MovieRelease. Esta variable indica el número de años que ha pasado desde que se ha estrenado una determinada película hasta que el usuario la ha calificado.
 
 
-
-## Tabla resumen del número de calificaciones
-```{python}
-import pandas as pd
-netflix_py = pd.read_csv("data/netflix.csv")
-res = pd.concat([netflix_py.groupby('MovieID')['Rating'].describe(),
-                      netflix_py.groupby('MovieID')['Rating'].agg(pd.Series.mode).rename('mode'),
-                      netflix_py.groupby('MovieID')['Rating'].agg(pd.Series.median).rename('median')
-                     ], axis=1).T
-                     
-print(res)
-```
-
-
-
-
-
-## Comparación de las 5 películas con mayor número de calificaciones
-```{r}
-movies_table = table(netflix$MovieID)
-
-#Ordenamos las MovieID en función del número de calificaciones y de forma descendente:
-orden = sort(movies_table, decreasing = TRUE)
-#Pedimos que nos imprima las 5 primeras observaciones, para obtener asi las 5 películas más votadas:
-head(orden, 5)
-#Una vez sabemos el MovieID de las películas más votadas las filtramos:
-mas_votadas = filter(netflix, MovieID == names(orden[1:5]))
-mas_votadas = as.data.frame(mas_votadas)
-
-#Representamos
-boxplot = ggplot(mas_votadas,aes(Title, Rating, group=MovieID))+
-  geom_boxplot(fill = "darkseagreen1", colour = "black", outlier.colour = "darkgreen")+
-   geom_point(stat= "summary", shape=20, size=2, color="red") 
-ggplotly(boxplot)
-```
-
-
-
-```{r}
-movies_table_title = sort(table(netflix$Title), decreasing = TRUE)
-movies_table_title = as.data.frame(movies_table_title)
-
-set.seed(42)
-ggplot(movies_table_title, aes(label = Var1, size = Freq, color = Freq, angle = sample(c(45,60,90,120,145,0,15,30), 250, replace = TRUE))) +
-  geom_text_wordcloud_area(mask = png::readPNG("imgs/netflix-mask2.png"),
-    rm_outside = TRUE) +
-  scale_color_gradient(low = "indianred1", high = "red2") +
-  theme(panel.background = element_rect(fill = "black"))
-```
-
-#Compara sus estadísticos y distribuciones(histogramas, boxplot, violin plot,. . . )
-
-## Distribución de calificaciones por año
-
-```{r}
-df_movies = filter(df_movies, df_movies$MovieID %in% muestra_grupo)
-calif_año = table(df_movies$MovieRelease)
-
-df_movies$MovieRelease = as.numeric(df_movies$MovieRelease)
-
-ggplot(data = df_movies) +
-  geom_histogram(aes(x = MovieRelease, y = ..count../sum(..count..), fill = ..count..),breaks = c(1920,1930,1940,1950,1960,1970,1980,1990,2000,2010), binwidth = 10)+
-  geom_density(aes(x = MovieRelease, y = 10*..count../sum(..count..))) 
-  
-```
-
-## Distribución de valoraciones por día
-```{r}
-netflix$DayOfWeek = weekdays(netflix$RatingDate)
-ggplot(data = netflix) +
-  geom_histogram(aes(x = DayOfWeek, y = ..count.., fill = ..count..), stat = "count")
-
-```
-
-## Distribución de valoraciones por mes
-```{r}
-
-ggplot(data = netflix) +
-  geom_histogram(aes(x = Month, y = ..count.., fill = ..count..), stat = "count")
-  
-#Investiga la distribución de valoraciones por día de la semana y por mes.¿Qué meses y días de la semana se valoran más películas en netflix?
-```
-
-
-## Las 10 películas más votadas
-```{r}
-#Tabla agrupada por película y año del número de valoraciones.
-tabla = table(netflix$MovieID, netflix$Year)
-tabla = as.data.frame(tabla)
-tabla = filter(tabla, Var1 %in% names(orden[1:10]))
-#Representación gráfica.
-ggplot(tabla, aes(x = Var2, y = Freq, group = Var1))+
-geom_line()
-```
-
-```{r}
-#Distribución del score promedio por año.
-a = filter (netflix, MovieID %in% names(orden[1:10]))
-
-res =  a %>%
-  group_by(MovieID, Year) %>%
-  summarise(mean = mean(Rating))
-```
-
-
-
 ## Calificaciones de las películas
 
 ### Calificación general 
 
 Analizar número de votaciones de las diferentes películas. ¿Cuántas películas hay de cada rating (1,2,3,4 y 5 estrellas)?
 
-```{r}
+```{r fig.align="center", fig.width=7, fig.height=4}
 ggplot(data = netflix, aes(x = Rating)) +
   geom_bar(aes(y = ..count.., fill = ..count..), 
            stat="count", 
@@ -357,8 +256,7 @@ image = image_read("imgs/icon-rating.png")
 grid.raster(image, x = 0.80, y = 0.25, height = 0.23)
 ```
 
-
-```{r}
+```{r include = FALSE}
 media = mean(netflix$Rating, na.rm = TRUE)
 media
 
@@ -372,16 +270,180 @@ La calificación de 4 que ha sido dada por un total de 2926 usuarios, es la que 
 
 La calificación media de todas las películas es de 3.37.
 
-### Analizar nº de votaciones/puntuación de cada película
 
+
+### Distribución de calificaciones por año
+
+```{r fig.align="center", fig.width=7, fig.height=4}
+df_movies = filter(df_movies, df_movies$MovieID %in% muestra_grupo)
+calif_año = table(df_movies$MovieRelease)
+df_movies$MovieRelease = as.numeric(df_movies$MovieRelease)
+
+break_range = seq(from = 1920, to = 2010, by = 10)
+
+hist_plot1 = ggplot(data = df_movies) +
+  geom_histogram(aes(x = MovieRelease, y = ..count../sum(..count..)),
+                 breaks = break_range,
+                 color = c("darkgoldenrod2", "lightgoldenrod1", "lightblue", "palegreen3", 
+                           "lightpink2", "plum3", "steelblue3", "darkolivegreen3", "salmon3"),
+                 fill = c("darkgoldenrod1", "khaki1", "lightblue", "palegreen", "lightpink1", 
+                          "plum2", "steelblue1", "darkolivegreen2", "salmon1"),
+                 size = 1) +
+  geom_density(aes(x = MovieRelease, y = 10*..density..),
+               color = "black",
+               fill = "seashell3",
+               size = 1, 
+               alpha = 0.2,
+               show.legend = FALSE) +
+  scale_x_continuous(breaks = break_range) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1), 
+                     limits = c(0, 0.5)) +
+  scale_color_gradient(low = "indianred1", high = "red2") +
+  ylab("% of movies") +
+  xlab("Movie release's decade") +
+  ggtitle("Percentage of movies released by decade") +
+  theme_minimal()
+
+div(ggplotly(hist_plot1), align = "center")
+```
+
+
+## Distribución de valoraciones por mes
+```{r}
+
+bar_plot2 = ggplot(data = netflix) +
+  geom_bar(aes(x = Month, y = ..count../sum(..count..), fill = ..count../sum(..count..)),
+           show.legend = FALSE,
+           color = c("darkslategray3", "darkslategray3", "darkslategray3", "lightpink2", 
+                     "lightpink2", "lightpink2", "lightgoldenrod2", "lightgoldenrod2", "lightgoldenrod2",
+                     "tan2", "tan2", "tan2"),
+           fill = c("darkslategray2", "darkslategray2", "darkslategray2", "lightpink1", 
+                     "lightpink1", "lightpink1", "lightgoldenrod1", "lightgoldenrod1", "lightgoldenrod1",
+                     "tan1", "tan1", "tan1"),
+           size = 1) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1), 
+                     limits = c(0, 0.15)) +
+  scale_x_discrete(labels = month.abb) +
+  ylab("% Ratings") +
+  xlab("Rating month") +
+  ggtitle("Percentage of ratings by month")
+  
+div(ggplotly(bar_plot2), align = "center")
+  
+```
+
+
+## Distribución de valoraciones por día
+```{r}
+netflix$DayOfWeek = weekdays(netflix$RatingDate)
+
+bar_plot3 = ggplot(data = netflix) +
+  geom_bar(aes(x = DayOfWeek, y = ..count../sum(..count..), fill = ..count../sum(..count..)),
+           show.legend = FALSE,
+           color = c("indianred4", "lightgoldenrod2", "palevioletred2", "palegreen4", 
+                     "tan2", "steelblue3", "mediumorchid4"),
+           fill = c("indianred3", "lightgoldenrod1", "palevioletred1", "palegreen3", 
+                     "tan1", "steelblue2", "mediumorchid3"),
+           size = 1) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1), 
+                     limits = c(0, 0.25)) +
+  scale_x_discrete(labels = month.abb) +
+  ylab("% Ratings") +
+  xlab("Rating day of week") +
+  ggtitle("Percentage of ratings by day of week")
+  
+div(ggplotly(bar_plot3), align = "center")
+```
+
+
+## Películas más votadas
+
+```{r message=FALSE, warning=FALSE, cache=TRUE}
+movies_table_title = sort(table(netflix$Title), decreasing = TRUE)
+movies_table_title = as.data.frame(movies_table_title)
+
+set.seed(2495)
+ggplot(movies_table_title, aes(label = Var1, size = Freq, color = Freq, angle = sample(c(0,15,30, 45,60, 75,90, 105,120,135, 160), 250, replace = TRUE))) +
+  geom_text_wordcloud_area(mask = png::readPNG("imgs/netflix-mask2.png"),
+    rm_outside = TRUE) +
+  scale_color_gradient(low = "indianred1", high = "red2") +
+  theme(panel.background = element_rect(fill = "black"))
+```
+[TODO]
+
+
+
+## Tabla resumen del número de calificaciones
+```{python}
+import pandas as pd
+netflix_py = pd.read_csv("data/netflix.csv")
+res = pd.concat([netflix_py.groupby('MovieID')['Rating'].describe(),
+                      netflix_py.groupby('MovieID')['Rating'].agg(pd.Series.mode).rename('mode'),
+                      netflix_py.groupby('MovieID')['Rating'].agg(pd.Series.median).rename('median')
+                     ], axis=1).T
+                     
+print(res)
+```
+
+
+## Las 10 películas más votadas
+```{r}
+movies_table = table(netflix$MovieID)
+
+#Ordenamos las MovieID en función del número de calificaciones y de forma descendente:
+orden = sort(movies_table, decreasing = TRUE)
+
+
+#Tabla agrupada por película y año del número de valoraciones.
+tabla = table(netflix$MovieID, netflix$Year)
+tabla = as.data.frame(tabla)
+tabla = filter(tabla, Var1 %in% names(orden[1:10]))
+#Representación gráfica.
+ggplot(tabla, aes(x = Var2, y = Freq, group = Var1))+
+geom_line()
+```
+
+#Compara sus estadísticos y distribuciones(histogramas, boxplot, violin plot,. . . )
 
 ```{r}
-#Comentar con Camila
-netflix %>%
-  count(YearsSinceRelease, Rating) %>%
-ggplot(mapping = aes(x = YearsSinceRelease, y = Rating))+
-  geom_tile(mapping = aes(fill = n))
+#Distribución del score promedio por año.
+a = filter (netflix, MovieID %in% names(orden[1:10]))
+
+res =  a %>%
+  group_by(MovieID, Year) %>%
+  summarise(mean = mean(Rating))
 ```
+
+
+## Comparación de las 5 películas con mayor número de calificaciones
+```{r}
+
+#Pedimos que nos imprima las 5 primeras observaciones, para obtener asi las 5 películas más votadas:
+head(orden, 5)
+#Una vez sabemos el MovieID de las películas más votadas las filtramos:
+mas_votadas = filter(netflix, MovieID == names(orden[1:5]))
+mas_votadas = as.data.frame(mas_votadas)
+
+#Representamos
+boxplot = ggplot(mas_votadas,aes(Title, Rating, group=MovieID))+
+  geom_boxplot(fill = "darkseagreen1", colour = "black", outlier.colour = "darkgreen")+
+   geom_point(stat= "summary", shape=20, size=2, color="red") 
+ggplotly(boxplot)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -435,11 +497,13 @@ image = image_read("imgs/menosvotada.jpg")
 grid.raster(image, x = 0.80, y = 0.35, height = 0.4)
 ```
 
-```{r}
-calif = table(netflix$MovieID, netflix$Rating)
-calif
 
-```
+
+
+### Analizar nº de votaciones/puntuación de cada película
+
+
+
 
 ## Relación fecha puntuación / calificación
 
@@ -461,3 +525,5 @@ calif
 ### Tiempo medio que ha pasado desde el estreno de la película hasta que ha sido puntuada
 
 ### Cantidad de tiempo entre estreno y calificación (Nº de casos)
+
+#<div/>
