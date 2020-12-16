@@ -16,11 +16,12 @@ output:
 knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
 knitr::kable
 library(tidyverse)
-library(plotly)
 library(shiny)
+library(plotly)
 library(lubridate) #Trabajar con fechas
 library(ggimage) #Gggplot images
-library(wordcloud) # word cloud generator
+library(gganimate) 
+library(wordcloud)
 library(wordcloud2) # word cloud generator
 library(ggwordcloud)
 library(magick)
@@ -304,12 +305,12 @@ hist_plot1 = ggplot(data = df_movies) +
   ggtitle("Percentage of movies released by decade") +
   theme_minimal()
 
-div(ggplotly(hist_plot1), align = "center")
+ggplotly(hist_plot1)
 ```
 
 
 ## Distribución de valoraciones por mes
-```{r}
+```{r fig.align="center", fig.width=7, fig.height=4}
 
 bar_plot2 = ggplot(data = netflix) +
   geom_bar(aes(x = Month, y = ..count../sum(..count..), fill = ..count../sum(..count..)),
@@ -326,15 +327,16 @@ bar_plot2 = ggplot(data = netflix) +
   scale_x_discrete(labels = month.abb) +
   ylab("% Ratings") +
   xlab("Rating month") +
-  ggtitle("Percentage of ratings by month")
+  ggtitle("Percentage of ratings by month") +
+  theme_minimal()
   
-div(ggplotly(bar_plot2), align = "center")
+ggplotly(bar_plot2)
   
 ```
 
 
 ## Distribución de valoraciones por día
-```{r}
+```{r fig.align="center", fig.width=7, fig.height=4}
 netflix$DayOfWeek = weekdays(netflix$RatingDate)
 
 bar_plot3 = ggplot(data = netflix) +
@@ -347,27 +349,30 @@ bar_plot3 = ggplot(data = netflix) +
            size = 1) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1), 
                      limits = c(0, 0.25)) +
-  scale_x_discrete(labels = month.abb) +
   ylab("% Ratings") +
   xlab("Rating day of week") +
-  ggtitle("Percentage of ratings by day of week")
+  ggtitle("Percentage of ratings by day of week") +
+  theme_minimal()
   
-div(ggplotly(bar_plot3), align = "center")
+ggplotly(bar_plot3)
 ```
 
 
 ## Películas más votadas
 
-```{r message=FALSE, warning=FALSE, cache=TRUE}
+```{r message=FALSE, warning=FALSE, cache=TRUE, fig.align="center", fig.width=7, fig.height=4}
 movies_table_title = sort(table(netflix$Title), decreasing = TRUE)
 movies_table_title = as.data.frame(movies_table_title)
 
-set.seed(2495)
+set.seed(2)
 ggplot(movies_table_title, aes(label = Var1, size = Freq, color = Freq, angle = sample(c(0,15,30, 45,60, 75,90, 105,120,135, 160), 250, replace = TRUE))) +
   geom_text_wordcloud_area(mask = png::readPNG("imgs/netflix-mask2.png"),
-    rm_outside = TRUE) +
+    rm_outside = TRUE, res = 100) +
   scale_color_gradient(low = "indianred1", high = "red2") +
-  theme(panel.background = element_rect(fill = "black"))
+  theme_minimal()
+
+
+wordcloud2(movies_table_title, size = 0.3, color = 'red')
 ```
 [TODO]
 
@@ -387,26 +392,40 @@ print(res)
 
 
 ## Las 10 películas más votadas
-```{r}
-movies_table = table(netflix$MovieID)
-
+```{r fig.align="center", fig.width=7, fig.height=4}
 #Ordenamos las MovieID en función del número de calificaciones y de forma descendente:
-orden = sort(movies_table, decreasing = TRUE)
-
+movies_table_name = table(netflix$Title)
+orden_name = sort(movies_table_name, decreasing = TRUE)
 
 #Tabla agrupada por película y año del número de valoraciones.
-tabla = table(netflix$MovieID, netflix$Year)
+tabla = table(netflix$Title, netflix$Year)
 tabla = as.data.frame(tabla)
-tabla = filter(tabla, Var1 %in% names(orden[1:10]))
+
+tabla = filter(tabla, Var1 %in% names(orden_name[1:10]))  %>% 
+  rename(MovieTitle = Var1, Year = Var2)
+
 #Representación gráfica.
-ggplot(tabla, aes(x = Var2, y = Freq, group = Var1))+
-geom_line()
+line_plot = ggplot(tabla, aes(x = Year, y = Freq, 
+                              group = MovieTitle, 
+                              color = MovieTitle,
+                              shape = MovieTitle)) +
+  scale_shape_manual(values=1:10) +
+  geom_point() +
+  geom_line() +
+  ylab("Ratings number") +
+  xlab("Rating's year") +
+  theme_minimal()
+
+ggplotly(line_plot)
 ```
 
 #Compara sus estadísticos y distribuciones(histogramas, boxplot, violin plot,. . . )
 
-```{r}
+```{r message = FALSE, warning = FALSE, fig.align="center", fig.width=7, fig.height=4}
 #Distribución del score promedio por año.
+movies_table = table(netflix$MovieID)
+orden = sort(movies_table, decreasing = TRUE)
+
 a = filter (netflix, MovieID %in% names(orden[1:10]))
 
 res =  a %>%
@@ -416,19 +435,31 @@ res =  a %>%
 
 
 ## Comparación de las 5 películas con mayor número de calificaciones
-```{r}
-
-#Pedimos que nos imprima las 5 primeras observaciones, para obtener asi las 5 películas más votadas:
-head(orden, 5)
+```{r message = FALSE, warning = FALSE, fig.align="center", fig.width=7, fig.height=4}
 #Una vez sabemos el MovieID de las películas más votadas las filtramos:
 mas_votadas = filter(netflix, MovieID == names(orden[1:5]))
 mas_votadas = as.data.frame(mas_votadas)
 
 #Representamos
-boxplot = ggplot(mas_votadas,aes(Title, Rating, group=MovieID))+
-  geom_boxplot(fill = "darkseagreen1", colour = "black", outlier.colour = "darkgreen")+
-   geom_point(stat= "summary", shape=20, size=2, color="red") 
-ggplotly(boxplot)
+positions = c("lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo")
+
+bar_plot3 = ggplot(data = netflix) +
+  geom_bar(aes(x = DayOfWeek, y = ..count../sum(..count..), fill = ..count../sum(..count..)),
+           show.legend = FALSE,
+           color = c("indianred4", "lightgoldenrod2", "palevioletred2", "palegreen4", 
+                     "tan2", "steelblue3", "mediumorchid4"),
+           fill = c("indianred3", "lightgoldenrod1", "palevioletred1", "palegreen3", 
+                     "tan1", "steelblue2", "mediumorchid3"),
+           size = 1) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1), 
+                     limits = c(0, 0.25)) +
+  scale_x_discrete(limits = positions)+
+  ylab("% Ratings") +
+  xlab("Rating day of week") +
+  ggtitle("Percentage of ratings by day of week") +
+  theme_minimal()
+
+div(ggplotly(bar_plot3), align = "center")
 ```
 
 
