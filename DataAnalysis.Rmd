@@ -308,6 +308,12 @@ hist_plot1 = ggplot(data = df_movies) +
 ggplotly(hist_plot1)
 ```
 
+Como podemos observar en el gráfico, el número de votaciones según la década sigue una distribución asimétrica negativa. 
+
+En 1920 apenas se dieron el 1.7% de votaciones, porcentaje que ha ido aumentando en las posteriores décadas hasta los 90 donde se alcanza el punto prominente con un 38% del total de calificaciones registradas en el presente estudio.  A principios de los 2000 el número de votaciones ha descendido aproximadamente un 10% respecto a la década anterior.
+
+Como se muestra, han sido en las últimas dos décadas, que figuran en nuestro estudio, donde se han dado la mayoría de las calificaciones, concretamente se han dado más de un 50% de las votaciones totales durante este período.
+
 
 ## Distribución de valoraciones por mes
 ```{r fig.align="center", fig.width=7, fig.height=4}
@@ -333,6 +339,9 @@ bar_plot2 = ggplot(data = netflix) +
 ggplotly(bar_plot2)
   
 ```
+Como se muestra en el gráfico la distribución de las calificaciones por meses está más compensada siendo el mes de octubre el mes en el cual se calificaron más películas siendo este un 10% del total de votaciones, le sigue el mes de septiembre con un 9.9%.
+
+El mes de enero es el mes en el que se realizaron el menor número de calificaciones (6.8% del total).
 
 
 ## Distribución de valoraciones por día
@@ -357,6 +366,11 @@ bar_plot3 = ggplot(data = netflix) +
 ggplotly(bar_plot3)
 ```
 
+El número de votaciones según el día de la semana sigue una distribución asimétrica positiva. Es decir, al principio se califican más películas y, a medida que se acerca el fin de semana, se reduce el número de votaciones. 
+
+El martes es el día de la semana en el cual se han registrado más calificaciones con un 17.77% del total, mientras que el sábado es el día en el cual se han calificado menos películas con un 9.82% del total.
+
+Como se observa, de lunes a jueves se encuentra más del 60% de las calificaciones y, el viernes y fin de semana son los días los cuales se puntúan un menor número de películas.
 
 ## Películas más votadas
 
@@ -461,21 +475,11 @@ bar_plot3 = ggplot(data = netflix) +
 
 div(ggplotly(bar_plot3), align = "center")
 ```
+El número de votaciones según el día de la semana sigue una distribución asimétrica positiva. Es decir, al principio se califican más películas y, a medida que se acerca el fin de semana, se reduce el número de votaciones. 
 
+El martes es el día de la semana en el cual se han registrado más calificaciones con un 17.77% del total, mientras que el sábado es el día en el cual se han calificado menos películas con un 9.82% del total.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+Como se observa, de lunes a jueves se encuentra más del 60% de las calificaciones y, el viernes y fin de semana son los días los cuales se puntúan un menor número de películas.
 
 
 
@@ -505,6 +509,10 @@ ggplot(data = df_more_voted, aes(x = Rating)) +
 image = image_read("imgs/masvotada.jpg") 
 grid.raster(image, x = 0.80, y = 0.35, height = 0.4)
 ```
+
+La película que ha obtenido el mayor número de calificaciones es Good morning, Vietnam, una película dramática estadounidense estrenada en 1987. 
+
+Esta película tiene un total de 82.949 calificaciones siendo la calificación de 4 la más abundante y con una calificación media superior a la media de todo el estudio.
 
 ```{r}
 #Menos votada

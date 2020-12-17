@@ -8,9 +8,11 @@ purrr
 dplyr
 stringr
 forcats
+shiny
 plotly
 lubridate
 ggimage
+gganimate
 RColorBrewer
 wordcloud
 wordcloud2
@@ -19,4 +21,3 @@ magick
 knitr
 gridExtra
 reticulate
-shiny
