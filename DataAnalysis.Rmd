@@ -18,16 +18,16 @@ knitr::kable
 library(tidyverse)
 library(shiny)
 library(plotly)
-library(lubridate) #Trabajar con fechas
+library(lubridate) #Work with dates
 library(ggimage) #Gggplot images
 library(gganimate) 
-library(wordcloud)
-library(wordcloud2) # word cloud generator
-library(ggwordcloud)
+library(wordcloud) #Word cloud generator
+library(wordcloud2) #Word cloud generator
+library(ggwordcloud) #Word cloud generator
 library(magick)
-library(knitr) # dynamic report generation
-library(gridExtra) # miscellaneous Functions for "Grid" Graphics
-library(grid) # add Grid to a Plot
+library(knitr) # Dynamic report generation
+library(gridExtra) # Miscellaneous Functions for "Grid" Graphics
+library(grid) # Add Grid to a Plot
 library(reticulate)
 ```
 #<div style="text-align: justify">
@@ -66,59 +66,49 @@ Ya que el fichero *"filas_ID_combined_all.txt"* cuenta con la información de to
 
 ```{r}
 #Función que obtiene los datos de filas específicas
-obtain_movies = function(index_data, combined_data, idx){
+obtain_movies = function(idx, combined_data, index_data){
   #Obtenemos las películas del archivo a leer (1,2,3 o 4)
   rows_data = filter(index_data, data == idx)
   rows_data = select(rows_data, fila, fila_final)
   
   #Por cada fila guardamos el rango de posiciones a leer en el fichero
-  ranges = c()
-  for(i in 1:nrow(rows_data)){
-    ranges = c(ranges, rows_data[[i,1]]:rows_data[[i,2]])
-    }
+  range =  apply(rows_data, 1, function(i){c(i[1]:i[2])})
+  range = unlist(range)
   
   #Nos quedamos solo con los datos de las películas de la muestra
-  combined_data = slice(combined_data, ranges)
-  return(combined_data)
+  return (slice(combined_data[[idx]], range))
 }
 ```
 
-```{r message = FALSE, cache = TRUE}
-#Leemos el índice
-filas_ID_combined_all = read_csv("data/filas_ID_combined_all.txt")
 
-#Cargamos los ficheros con la información de Netflix
-combined_data1 = read_tsv("data/combined_data_1.txt", col_names=FALSE)
-combined_data2 = read_tsv("data/combined_data_2.txt", col_names=FALSE)
-combined_data3 = read_tsv("data/combined_data_3.txt", col_names=FALSE)
-combined_data4 = read_tsv("data/combined_data_4.txt", col_names=FALSE)
 
+```{r message = FALSE}
 #Obtenemos nuestra muestra de películas
 n_muestra = 250
 set.seed(2495)
 muestra_grupo = sample(1:17770, n_muestra, replace = FALSE)
 
-#Nos quedamos con el índice de las películas de nuestra muestra
-filas_ID_combined_all = filter(filas_ID_combined_all, filas_ID_combined_all$ID %in% muestra_grupo)
-filas_ID_combined_all = select(filas_ID_combined_all, ID, fila, fila_final, data)
+#Leemos el fichero y nos quedamos con el índice de las películas de nuestra muestra
+filas_ID_combined_all = read_csv("data/filas_ID_combined_all.txt")
+filas_ID_combined_all %<>% 
+  filter(filas_ID_combined_all$ID %in% muestra_grupo) %>%
+  select(ID, fila, fila_final, data)
 
-#Mostramos cuántas películas debemos leer de cada fichero
-#table(filas_ID_combined_all$data)
+#Cargamos los ficheros con la información de Netflix
+file_names = list.files("data/", pattern = "^combined_data") 
+file_list = lapply(file_names, function(i){read_tsv(file.path("data", i), col_names = FALSE)})
 
-#Leemos las observaciones de las películas de nuestra muestra
-data1 = obtain_movies(filas_ID_combined_all, combined_data1, 1)
-data2 = obtain_movies(filas_ID_combined_all, combined_data2, 2)
-data3 = obtain_movies(filas_ID_combined_all, combined_data3, 3)
-data4 = obtain_movies(filas_ID_combined_all, combined_data4, 4)
+#Leemos las observaciones de las películas de nuestra muestra por cada fichero
+data_list = lapply(seq_along(file_list), FUN = obtain_movies, combined_data = file_list, index_data = filas_ID_combined_all)
 
 #Juntamos los datos de las películas de los 4 ficheros
-df_ratings = rbind(data1,data2,data3,data4)
+df_ratings = bind_rows(data_list)
 
 #Exportamos los datos de las películas de nuestra muestra
-write.table(df_ratings,"data/combined_data_sample.txt", row.names = FALSE, col.names = FALSE)
+write.table(df_ratings,"data/data_sample.txt", row.names = FALSE, col.names = FALSE)
 
 #Eliminamos variables que ya no son útiles
-rm(combined_data1, combined_data2, combined_data3, combined_data4, data1, data2, data3, data4, filas_ID_combined_all)
+rm(data_list, file_list, file_names, filas_ID_combined_all)
 ```
 
 
@@ -147,7 +137,7 @@ netflix = df_ratings %>%
      filter(!(Idx %in% rows_ID))
 
 #Se definen las columnas del dataframe
-netflix = netflix %>% 
+netflix %<>% 
      separate(X1,into = c("UserID","Rating","RatingDate"), sep = ",") %>%
      na.omit(netflix) %>%
      mutate(Idx = row_number())
@@ -156,18 +146,16 @@ netflix = netflix %>%
 rm(df_ratings, movie_rows, rows_ID, reps)
 ```
 
-Con el objectivo de completar nuestro dataset, realizamos la unión de la tibble *netflix* con los datos exportados del fichero *movies_titles.csv*, añadiendo así la variable del nombre de la película y el año de estreno. Una vez se ha realizado el *inner join*, se procede al cambio de tipo de cada variable para que concuerde con la información que representan. 
+Con el objetivo de completar nuestro dataset, realizamos la unión de la tibble *netflix* con los datos exportados del fichero *movies_titles.csv*, añadiendo así la variable del nombre de la película y el año de estreno. Una vez se ha realizado el *inner join*, se procede al cambio de tipo de cada variable para que concuerde con la información que representan. 
 
 
 ```{r, message = FALSE, cache = TRUE}
 #Lectura del fichero movie_titles.csv
 df_movies = read_tsv("data/movie_titles.csv", locale = readr::locale(encoding = "ISO-8859-1"), col_names=FALSE)
 
-df_movies = df_movies %>% 
-            separate(X1,",",into =c("MovieID","MovieRelease","Title"), extra="merge")
-
-df_movies = filter(df_movies, df_movies$MovieID %in% muestra_grupo)
-
+df_movies %<>% 
+  separate(X1,",",into =c("MovieID","MovieRelease","Title"), extra="merge") %>%
+  filter(MovieID %in% muestra_grupo)
 
 #Se transforma la variable MovieRelease a numérica
 netflix$MovieID = as.character(netflix$MovieID)
@@ -192,15 +180,15 @@ netflix$YearsSinceRelease = as.numeric(netflix$YearsSinceRelease)
 
 #Adicionalmente, dividimos la variable RatingDate en: día, mes y año
 sep = netflix %>%
-  separate(RatingDate,into = c("Year","Month","Day"), sep = "-") %>%
+  separate(RatingDate,into = c("Year","Month","Day"), sep = "-", remove = FALSE) %>%
   na.omit(netflix) %>%
   mutate(Idx = row_number())
 
-netflix = mutate(netflix, sep)
-rm(sep)
-
 #Se ordenan las posiciones de las columnas y se indican su nuevo nombre
-netflix = select(netflix, Idx, MovieID, Title, UserID, Rating, Day, Month, Year, RatingDate, MovieRelease,  YearsSinceRelease)
+netflix %<>% mutate(netflix, sep) %>%
+  select(Idx, MovieID, Title, UserID, Rating, Day, Month, Year, RatingDate, MovieRelease,  YearsSinceRelease)
+
+rm(sep)
 
 #Exportamos el fichero preparado y construido para empezar a trabajar en su análisis
 write.csv(netflix, "data/netflix.csv", row.names = FALSE)
@@ -277,7 +265,6 @@ La calificación media de todas las películas es de 3.37.
 
 ```{r fig.align="center", fig.width=7, fig.height=4}
 df_movies = filter(df_movies, df_movies$MovieID %in% muestra_grupo)
-calif_año = table(df_movies$MovieRelease)
 df_movies$MovieRelease = as.numeric(df_movies$MovieRelease)
 
 break_range = seq(from = 1920, to = 2010, by = 10)
@@ -358,6 +345,7 @@ bar_plot3 = ggplot(data = netflix) +
            size = 1) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1), 
                      limits = c(0, 0.25)) +
+  scale_x_discrete(limits =  c("lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo")) +
   ylab("% Ratings") +
   xlab("Rating day of week") +
   ggtitle("Percentage of ratings by day of week") +
@@ -381,7 +369,7 @@ movies_table_title = as.data.frame(movies_table_title)
 set.seed(2)
 ggplot(movies_table_title, aes(label = Var1, size = Freq, color = Freq, angle = sample(c(0,15,30, 45,60, 75,90, 105,120,135, 160), 250, replace = TRUE))) +
   geom_text_wordcloud_area(mask = png::readPNG("imgs/netflix-mask2.png"),
-    rm_outside = TRUE, res = 100) +
+    rm_outside = F) +
   scale_color_gradient(low = "indianred1", high = "red2") +
   theme_minimal()
 
@@ -407,15 +395,11 @@ print(res)
 
 ## Las 10 películas más votadas
 ```{r fig.align="center", fig.width=7, fig.height=4}
-#Ordenamos las MovieID en función del número de calificaciones y de forma descendente:
-movies_table_name = table(netflix$Title)
-orden_name = sort(movies_table_name, decreasing = TRUE)
-
 #Tabla agrupada por película y año del número de valoraciones.
 tabla = table(netflix$Title, netflix$Year)
 tabla = as.data.frame(tabla)
 
-tabla = filter(tabla, Var1 %in% names(orden_name[1:10]))  %>% 
+tabla = filter(tabla, Var1 %in% movies_table_title[1:10,1])  %>% 
   rename(MovieTitle = Var1, Year = Var2)
 
 #Representación gráfica.
@@ -432,6 +416,14 @@ line_plot = ggplot(tabla, aes(x = Year, y = Freq,
 
 ggplotly(line_plot)
 ```
+
+Las 10 películas más votadas fueron: Bad Boys, Final Destinatión, Freaky Friday, Good morning Vietnam, Lethal Weapon 3, Meet Joe Black, Monster-in-Law, Some Like It Hot, The Grudge y The Rundown.
+
+Como podemos observar, las 10 películas más calificadas fueron las puntuadas a partir de 1999, recibiendo calificaciones este mismo año 3 películas (Good Morning vietnam, Lethal Weapon 3 y Meet Joe Black). Al año siguiente empezaron a calificar 2 películas más a parte de las anteriores (Bad Boys y Final Destination), en 2001 se sumo la película Some Like It Hot, y un año después las películas The Rundown y Freaky Friday. Seguidamente en 2003 comenzó a recibir calificaciones la película The Grudge y, finalmente, en 2004 empezó a ser calificada la película Monster-in-Law.
+
+Esta cantidad de calificaciones fue aumentando cada año hasta situarse en el 2005 con el año en el cual cada película recibió más calificaciones con excepción de 2 casos: Freaky Friday y te Rundown quienes recibieron la mayor cantidad en el año 2004 con un total de 43.612 y 25.056 votos respectivamente.
+
+El reto de películas, como se ha comentado recibió el mayor número de calificaciones en 2005, siendo estas cantidades:
 
 #Compara sus estadísticos y distribuciones(histogramas, boxplot, violin plot,. . . )
 
