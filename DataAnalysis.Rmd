@@ -20,7 +20,7 @@ output:
 ---
 
 ```{r setup, include=FALSE, cache = TRUE}
-knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+knitr::opts_chunk$set(echo = TRUE)
 knitr::kable
 library(tidyverse)
 library(shiny)
@@ -166,6 +166,9 @@ df_movies %<>%
   filter(MovieID %in% muestra_grupo)
 
 #Se transforma la variable MovieRelease a numérica
+df_movies$MovieRelease = as.numeric(df_movies$MovieRelease)
+
+#Se transforma la variable MovieRelease a numérica
 netflix$MovieID = as.character(netflix$MovieID)
 
 #Se unifica el dataframe de las puntuaciones con el de las películas
@@ -176,9 +179,6 @@ netflix$Rating = as.numeric(netflix$Rating)
 
 #Se transforma la variable 'RatingDate' a tipo date
 netflix$RatingDate = as.Date(netflix$RatingDate, format = "%Y-%m-%d")
-
-#Se transforma la variable MovieRelease a numérica
-netflix$MovieRelease = as.numeric(netflix$MovieRelease)
 
 #Se añade la diferencia en años entre el año de puntuación y el de estreno de la película
 netflix = mutate(netflix, YearsSinceRelease = year(RatingDate) - MovieRelease)
@@ -232,6 +232,7 @@ str(netflix)
 
 
 ```{r  fig.cap='Número total de calificaciones por estrella.', fig.align="center", fig.width=7, fig.height=4}
+
 ggplot(data = netflix, aes(x = Rating)) +
   geom_bar(aes(y = ..count.., fill = ..count..), 
            stat="count", 
@@ -248,6 +249,7 @@ ggplot(data = netflix, aes(x = Rating)) +
 # Image in the visualization 
 image = image_read("imgs/icon-rating.png") 
 grid.raster(image, x = 0.80, y = 0.25, height = 0.23)
+
 ```
 
 ```{r include = FALSE}
@@ -257,7 +259,7 @@ moda = names(which(table(netflix$Rating) == max(table(netflix$Rating))))
 
 Como se puede observar en el gráfico, las puntuaciones generalmente han sido positivas ya que el mayor número de concentración de observaciones se encuentra entre 3 estrellas o más. De hecho, si realizamos la medía de todas las calificaciones vemos que es de `r media` estrellas.
 
-La calificación de 4 estrellas que ha sido dada por un total de 2926 usuarios, es la que se ha dado más veces.
+La calificación de `r moda` estrellas es la moda con un total de 368895 votaciones.
 
 
 ### Distribución de calificaciones por mes
@@ -281,8 +283,8 @@ bar_plot2 = ggplot(data = netflix) +
   ggtitle("Percentage of ratings by month") +
   theme_minimal()
   
-ggplotly(bar_plot2)
-  
+div(ggplotly(bar_plot2), align ="center")
+
 ```
 Como se muestra en el gráfico la distribución de las calificaciones por meses está más compensada siendo el mes de octubre el mes en el cual se calificaron más películas siendo este un 10% del total de votaciones, le sigue el mes de septiembre con un 9.9%.
 
@@ -291,6 +293,7 @@ El mes de enero es el mes en el que se realizaron el menor número de calificaci
 
 ### Distribución de calificaciones por día
 ```{r fig.cap='Porcentaje de calificaciones por día de la semana.', fig.align="center", fig.width=7, fig.height=4}
+#Añadimos una variable nueva en el dataset que indique el día de la semana según la fecha de la calificación
 netflix$DayOfWeek = weekdays(netflix$RatingDate)
 
 bar_plot3 = ggplot(data = netflix) +
@@ -309,7 +312,8 @@ bar_plot3 = ggplot(data = netflix) +
   ggtitle("Percentage of ratings by day of week") +
   theme_minimal()
   
-ggplotly(bar_plot3)
+div(ggplotly(bar_plot3), align ="center")
+
 ```
 
 El número de votaciones según el día de la semana sigue una distribución asimétrica positiva. Es decir, al principio se califican más películas y, a medida que se acerca el fin de semana, se reduce el número de votaciones. 
@@ -321,26 +325,34 @@ Como se observa, de lunes a jueves se encuentra más del 60% de las calificacion
 
 ## Películas más votadas
 
-```{r fig.cap='Películas más votadas',message=FALSE, warning=FALSE, cache=TRUE, fig.align="center", fig.width=7, fig.height=4}
-movies_table_title = sort(table(netflix$Title), decreasing = TRUE)
-movies_table_title = as.data.frame(movies_table_title)
+```{r fig.cap='Películas más votadas.', message=FALSE, warning=FALSE, cache=TRUE, fig.align="center", fig.width=7, fig.height=4}
+
+movies_title = sort(table(netflix$Title), decreasing = TRUE)
+movies_title = as.data.frame(movies_title) %>%
+  rename(Title = Var1)
 
 set.seed(2)
-ggplot(movies_table_title, aes(label = Var1, size = Freq, color = Freq, angle = sample(c(0,15,30, 45,60, 75,90, 105,120,135, 160), 250, replace = TRUE))) +
+ggplot(movies_title, aes(label = Title, 
+                         size = Freq, 
+                         color = Freq, 
+                         angle = sample(c(0,15,30, 45,60, 75,90, 105,120,135, 160), 250, replace = TRUE))) +
   geom_text_wordcloud_area(mask = png::readPNG("imgs/netflix-mask2.png"),
                            rm_outside = T) +
   scale_color_gradient(low = "indianred1", high = "red2") +
   theme_minimal()
 
+set.seed(2495)
+wordcloud2(movies_title, size = 0.39)
 
-wordcloud2(movies_table_title, size = 0.3)
 ```
 [TODO]
 
 
 
 ## Tabla resumen del número de calificaciones
+
 ```{python}
+
 import pandas as pd
 netflix_py = pd.read_csv("data/netflix.csv")
 res = pd.concat([netflix_py.groupby('MovieID')['Rating'].describe(),
@@ -349,23 +361,29 @@ res = pd.concat([netflix_py.groupby('MovieID')['Rating'].describe(),
                      ], axis=1).T
                      
 print(res)
+
 ```
 
 
 ## Las 10 películas más votadas
-```{r fig.align="center", fig.width=7, fig.height=4}
-#Tabla agrupada por película y año del número de valoraciones.
-tabla = table(netflix$Title, netflix$Year)
-tabla = as.data.frame(tabla)
 
-tabla = filter(tabla, Var1 %in% movies_table_title[1:10,1])  %>% 
-  rename(MovieTitle = Var1, Year = Var2)
+```{r fig.cap='Calificaciones por año de las películas más votadas.', fig.align="center", fig.width=7, fig.height=4}
+
+#Tabla agrupada por película y año la valoración.
+movies_year_rating = table(netflix$Title, netflix$Year)
+movies_year_rating = as.data.frame(movies_year_rating)
+
+movies_year_rating %<>% 
+  rename(MovieTitle = Var1, Year = Var2) %>% 
+  filter(MovieTitle %in% movies_title[1:10,1])
+  
 
 #Representación gráfica.
-line_plot = ggplot(tabla, aes(x = Year, y = Freq, 
-                              group = MovieTitle, 
-                              color = MovieTitle,
-                              shape = MovieTitle)) +
+line_plot = ggplot(movies_year_rating, 
+                   aes(x = Year, y = Freq, 
+                       group = MovieTitle, 
+                       color = MovieTitle,
+                       shape = MovieTitle)) +
   scale_shape_manual(values=1:10) +
   geom_point() +
   geom_line() +
@@ -373,7 +391,8 @@ line_plot = ggplot(tabla, aes(x = Year, y = Freq,
   xlab("Rating's year") +
   theme_minimal()
 
-ggplotly(line_plot)
+div(ggplotly(line_plot), align ="center")
+
 ```
 
 Las 10 películas más votadas fueron: Bad Boys, Final Destinatión, Freaky Friday, Good morning Vietnam, Lethal Weapon 3, Meet Joe Black, Monster-in-Law, Some Like It Hot, The Grudge y The Rundown.
@@ -385,65 +404,57 @@ Esta cantidad de calificaciones fue aumentando cada año hasta situarse en el 20
 El reto de películas, como se ha comentado recibió el mayor número de calificaciones en 2005, siendo estas cantidades:
 
 
-## **Comparación de las películas**
+### Distribución del score promedio por año de las 10 películas con mayor número de valoraciones.
 
-### Compara sus estadísticos y distribuciones(histogramas, boxplot, violin plot,. . . )
+```{r fig.cap='Calificación media por año y película.', message = FALSE, warning = FALSE, fig.align="center", fig.width=12, fig.height=8}
 
-```{r message = FALSE, warning = FALSE, fig.align="center", fig.width=7, fig.height=4}
-#Distribución del score promedio por año.
-movies_table = table(netflix$MovieID)
-orden = sort(movies_table, decreasing = TRUE)
-
-a = filter (netflix, MovieID %in% names(orden[1:10]))
-
-res =  a %>%
-  group_by(MovieID, Year) %>%
+data = filter(netflix, Title %in% movies_title[1:10,1]) %>%
+  group_by(Title, Year) %>%
   summarise(mean = mean(Rating))
+
+bar_plot_facet = ggplot(data, aes(fill=Title, y=mean, x=Year)) + 
+  geom_bar(position="dodge", stat="identity") +
+  facet_wrap(~Title, scales='free') +
+  scale_x_discrete(limits=c("1999", "2000", "2001", "2002", "2003", "2004", "2005")) + 
+  scale_y_discrete(limits=c(0:5)) +
+  theme(panel.spacing.x=unit(1, "lines") , panel.spacing.y=unit(3,"lines"),
+        axis.text.x = element_text(angle = 45))
+
+div(ggplotly(bar_plot_facet), align ="center")
+
 ```
 
+
+## **Comparación de las películas**
 
 ### Comparación de las 5 películas con mayor número de calificaciones
 
-```{r message = FALSE, warning = FALSE, fig.align="center", fig.width=7, fig.height=4}
-#Una vez sabemos el MovieID de las películas más votadas las filtramos:
-mas_votadas = filter(netflix, MovieID == names(orden[1:5]))
-mas_votadas = as.data.frame(mas_votadas)
+```{r fig.cap='Comparativa estádistica de las 5 películas más votadas.', message = FALSE, warning = FALSE, fig.align="center", fig.width=7, fig.height=4}
 
-#Representamos
-positions = c("lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo")
+data_boxplot = filter(netflix, Title %in% movies_title[1:5, 1])
 
-bar_plot3 = ggplot(data = netflix) +
-  geom_bar(aes(x = DayOfWeek, y = ..count../sum(..count..), fill = ..count../sum(..count..)),
-           show.legend = FALSE,
-           color = c("indianred4", "lightgoldenrod2", "palevioletred2", "palegreen4", 
-                     "tan2", "steelblue3", "mediumorchid4"),
-           fill = c("indianred3", "lightgoldenrod1", "palevioletred1", "palegreen3", 
-                     "tan1", "steelblue2", "mediumorchid3"),
-           size = 1) +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1), 
-                     limits = c(0, 0.25)) +
-  scale_x_discrete(limits = positions)+
-  ylab("% Ratings") +
-  xlab("Rating day of week") +
-  ggtitle("Percentage of ratings by day of week") +
-  theme_minimal()
+boxplot = ggplot(data_boxplot, aes(Title, Rating, group=Title)) +
+  geom_boxplot(
+    fill = c("lightsalmon1", "palegreen2", "tomato2", "thistle3", "paleturquoise2" ), 
+    colour = c("lightsalmon4", "palegreen4","tomato4", "thistle4", "paleturquoise4" ), 
+    outlier.colour = c("lightsalmon4", "palegreen4","tomato4", "thistle4", "paleturquoise4" )) +
+  geom_point(stat= "summary", shape=20, size=2, color="gray28") +
+  theme(axis.text.x = element_text(angle = 45))
 
-div(ggplotly(bar_plot3), align = "center")
+div(ggplotly(boxplot), align ="center")
+
 ```
-El número de votaciones según el día de la semana sigue una distribución asimétrica positiva. Es decir, al principio se califican más películas y, a medida que se acerca el fin de semana, se reduce el número de votaciones. 
 
-El martes es el día de la semana en el cual se han registrado más calificaciones con un 17.77% del total, mientras que el sábado es el día en el cual se han calificado menos películas con un 9.82% del total.
 
-Como se observa, de lunes a jueves se encuentra más del 60% de las calificaciones y, el viernes y fin de semana son los días los cuales se puntúan un menor número de películas.
 
 
 ### Película más votada y menos votada
 
-```{r}
-#Más votada
-df_more_voted = netflix[netflix$MovieID == names(which.max(movies_table)),]
+```{r fig.cap='Calificaciones de la película más votada.', message = FALSE, warning = FALSE, fig.align="center", fig.width=7, fig.height=4}
+#Más votadas
+data_morevoted = filter(netflix, Title == movies_title[1, 1])
 
-ggplot(data = df_more_voted, aes(x = Rating)) +
+ggplot(data_morevoted, aes(x = Rating)) +
   geom_bar(aes(y = ..count.., fill = ..count..), 
            stat="count", 
            show.legend = FALSE) +
@@ -451,8 +462,8 @@ ggplot(data = df_more_voted, aes(x = Rating)) +
             stat = "count",
             vjust = -.5) +
   scale_fill_gradient(low = "cadetblue1", high = "cadetblue4")+
-  labs(x = "Rating", y = "Number of ratings", title = df_more_voted$Title[1])+
-  scale_y_continuous(limits=c(0,45000))+
+  labs(x = "Rating", y = "Number of ratings", title = data_morevoted$Title[1]) +
+  scale_y_continuous(limits=c(0,45000)) +
   coord_flip() + 
   theme_classic()
 
@@ -463,22 +474,21 @@ grid.raster(image, x = 0.80, y = 0.35, height = 0.4)
 
 La película que ha obtenido el mayor número de calificaciones es Good morning, Vietnam, una película dramática estadounidense estrenada en 1987. 
 
-Esta película tiene un total de 82.949 calificaciones siendo la calificación de 4 la más abundante y con una calificación media superior a la media de todo el estudio.
 
-```{r}
+```{r fig.cap='Calificaciones de la película menos votada.', message = FALSE, warning = FALSE, fig.align="center", fig.width=7, fig.height=4}
 #Menos votada
-df_less_voted = netflix[netflix$MovieID == names(which.min(movies_table)),]
+data_lessvoted = filter(netflix, Title == movies_title[nrow(movies_title), 1])
 
-ggplot(data = df_less_voted, aes(x = Rating)) +
+ggplot(data_lessvoted, aes(x = Rating)) +
   geom_bar(aes(y = ..count.., fill = ..count..), 
            stat="count", 
            show.legend = FALSE) +
   geom_label(aes(label = ..count.., y = ..count..), 
             stat = "count",
             vjust = -.5) +
-  scale_fill_gradient(low = "darkgoldenrod1", high = "darkgoldenrod3")+
-  labs(x = "Rating", y = "Number of ratings", title = df_less_voted$Title[1])+
-  scale_y_continuous(limits=c(0,8))+
+  scale_fill_gradient(low = "darkgoldenrod1", high = "darkgoldenrod3") +
+  labs(x = "Rating", y = "Number of ratings", title = data_lessvoted$Title[1]) +
+  scale_y_continuous(limits=c(0,8)) +
   coord_flip() + 
   theme_classic()
 
@@ -494,8 +504,6 @@ grid.raster(image, x = 0.80, y = 0.35, height = 0.4)
 Para estudiar la distribución del número de películas que se estrenaron cada año, realizamos un histograma que muestre por cada década desde el 1920 al 2010 el porcentaje total de producciones realizadas para ese periodo de años. 
 
 ```{r fig.cap='Porcentaje películas según la década de estreno.',fig.align="center", fig.width=7, fig.height=4}
-df_movies = filter(df_movies, df_movies$MovieID %in% muestra_grupo)
-df_movies$MovieRelease = as.numeric(df_movies$MovieRelease)
 
 break_range = seq(from = 1920, to = 2010, by = 10)
 
@@ -530,6 +538,17 @@ Como podemos observar en el gráfico, el número de películas estrenada según 
 En netflix se valoraron solo 1.7% de películas estrenadas en la década 1920. Dicho porcentaje  ha ido aumentando en las posteriores décadas hasta los 90 donde se alcanza el punto prominente con un 38% del total de calificaciones registradas en el presente estudio.  A principios de los 2000 el número de votaciones ha descendido aproximadamente un 10% respecto a la década anterior, pero esto se debe al muestreo de películas que estamos analizando. 
 
 En general, se puede concluir que cuanto más moderna es la película más votaciones tiene, puesto que la gente prefiere visualizar producciones más actuales que antiguas. Esto también puede darse por el catálogo de Netflix, que dispone de películas más actuales. 
+
+
+```{r fig.cap='Calificaciones según la diferencia entre años de estreno y de votación.', fig.align="center", fig.width=20, fig.height=4}
+netflix %>%
+  count(YearsSinceRelease, Rating) %>%
+  ggplot(mapping = aes(x = Rating, y = YearsSinceRelease)) +
+  geom_tile(mapping = aes(fill = n, width = 0.7, height = 0.7), 
+            size = 2) +
+  scale_fill_gradientn(colours = c("lightgoldenrod1", "coral",  "orange", "purple", "maroon")) +
+  theme_minimal()
+```
 
 
 
