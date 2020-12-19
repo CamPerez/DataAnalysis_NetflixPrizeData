@@ -20,4 +20,5 @@ ggwordcloud
 magick
 knitr
 gridExtra
+bookdown
 reticulate

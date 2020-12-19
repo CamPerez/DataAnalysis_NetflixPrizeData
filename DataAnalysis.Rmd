@@ -1,18 +1,25 @@
 ---
-title: 'Análisis de datos: Netfliz Prize Program'
-author: "Laura Basalo Tur, Camila Pérez"
+title: "Netfliz Prize Program"
+author: "Laura Basalo Tur, Camila Pérez Arévalo"
 date: "20/11/2020"
 output:
   html_document:
+    number_sections: no
     toc: yes
     code_folding: hide
     theme: cosmo
     highlight: tango
   pdf_document:
     toc: yes
+  bookdown::html_document2:
+    number_sections: no
+    toc: yes
+    code_folding: hide
+    theme: cosmo
+    highlight: tango
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=FALSE, cache = TRUE}
 knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
 knitr::kable
 library(tidyverse)
@@ -28,9 +35,10 @@ library(magick)
 library(knitr) # Dynamic report generation
 library(gridExtra) # Miscellaneous Functions for "Grid" Graphics
 library(grid) # Add Grid to a Plot
+library(bookdown) #Fig caption output
 library(reticulate)
 ```
-#<div style="text-align: justify">
+<div style="text-align: justify">
 <center><img
 src="imgs/netflix-intro3.gif">
 </center>
@@ -43,14 +51,14 @@ En el presente estudio se procederá a analizar el data set llamado *"Netflix Pr
 Antes de extraer la información y comenzar a trabajar sobre ella se ha procedido a visualizar a qué tipo de datos íbamos a enfrentarnos. El dataset contiene diversos archivos pero solo nos centraremos con los que vamos a trabajar en este estudio: 
 
 
-### Combined Data
+### **Combined Data**
 
 Los archivos *'combined_data_{nº}'* contienen la información de las puntuaciones de los usuarios para determinado código de película, así como el identificador de usuario y la fecha (día, mes y año) en la que se dio dicha valoración. 
 
 Esta base de datos cuenta con un tamaño de espacio en memoria demasiado elevado, por lo que se procederá a extraer los datos de 250 películas escogidas de manera aleatoria con una semilla ("2495"). 
 
 
-### Movie titles
+### **Movie titles**
 
 Otro de los archivos que se utilizarán en este estudio contiene el título de cada ID asociado a las películas además del año en el que se estrenó. En secciones posteriores explicaremos como realizaremos la inclusión de estos datos junto con los datos iniciales para obtener el dataset final con el que trabajaremos de forma más cómoda.
 
@@ -64,7 +72,7 @@ El primer paso para realizar la carga de datos es leer el fichero *"filas_ID_com
 
 Ya que el fichero *"filas_ID_combined_all.txt"* cuenta con la información de todas las películas, después de exportarlo realizaremos un filtrado para quedarnos solo con las filas de las 250 películas que nos interesan estudiar. Seguidamente, utilizaremos la función *obtain_movies* para que, pasados los parámetros del fichero *"filas_ID_combined_all.txt"* y el ID de *'combined_data_{nº}'*, calculemos todas las posiciones a leer y nos devuelva un *combined_data* con solo las observaciones de las películas que sabemos que se encuentran en dicho fichero. 
 
-```{r}
+```{r cache = TRUE}
 #Función que obtiene los datos de filas específicas
 obtain_movies = function(idx, combined_data, index_data){
   #Obtenemos las películas del archivo a leer (1,2,3 o 4)
@@ -82,14 +90,14 @@ obtain_movies = function(idx, combined_data, index_data){
 
 
 
-```{r message = FALSE}
+```{r message = FALSE, cache = TRUE}
 #Obtenemos nuestra muestra de películas
 n_muestra = 250
 set.seed(2495)
 muestra_grupo = sample(1:17770, n_muestra, replace = FALSE)
 
 #Leemos el fichero y nos quedamos con el índice de las películas de nuestra muestra
-filas_ID_combined_all = read_csv("data/filas_ID_combined_all.txt")
+filas_ID_combined_all = read.csv("data/filas_ID_combined_all.txt")
 filas_ID_combined_all %<>% 
   filter(filas_ID_combined_all$ID %in% muestra_grupo) %>%
   select(ID, fila, fila_final, data)
@@ -179,16 +187,12 @@ netflix = mutate(netflix, YearsSinceRelease = year(RatingDate) - MovieRelease)
 netflix$YearsSinceRelease = as.numeric(netflix$YearsSinceRelease)
 
 #Adicionalmente, dividimos la variable RatingDate en: día, mes y año
-sep = netflix %>%
+#Se ordenan las posiciones de las columnas y se indican su nuevo nombre
+netflix %<>%
   separate(RatingDate,into = c("Year","Month","Day"), sep = "-", remove = FALSE) %>%
   na.omit(netflix) %>%
-  mutate(Idx = row_number())
-
-#Se ordenan las posiciones de las columnas y se indican su nuevo nombre
-netflix %<>% mutate(netflix, sep) %>%
+  mutate(Idx = row_number()) %>%
   select(Idx, MovieID, Title, UserID, Rating, Day, Month, Year, RatingDate, MovieRelease,  YearsSinceRelease)
-
-rm(sep)
 
 #Exportamos el fichero preparado y construido para empezar a trabajar en su análisis
 write.csv(netflix, "data/netflix.csv", row.names = FALSE)
@@ -196,6 +200,8 @@ write.csv(netflix, "data/netflix.csv", row.names = FALSE)
 
 
 # **Analizando nuestros datos**
+
+## **Estructura del modelo de datos**
 
 Una vez tenemos la tibble final sobre la que vamos a trabajar, procedemos a estudiar su estructura: 
 
@@ -220,13 +226,12 @@ str(netflix)
 * **YearsSinceRelease:** Variable numérica la cual se ha calculado mediante la resta de RatingDate y MovieRelease. Esta variable indica el número de años que ha pasado desde que se ha estrenado una determinada película hasta que el usuario la ha calificado.
 
 
-## Calificaciones de las películas
+## **Calificaciones de las películas**
 
-### Calificación general 
+### ¿Cuántos calificaciones hay en total y cómo se distribuyen? 
 
-Analizar número de votaciones de las diferentes películas. ¿Cuántas películas hay de cada rating (1,2,3,4 y 5 estrellas)?
 
-```{r fig.align="center", fig.width=7, fig.height=4}
+```{r  fig.cap='Número total de calificaciones por estrella.', fig.align="center", fig.width=7, fig.height=4}
 ggplot(data = netflix, aes(x = Rating)) +
   geom_bar(aes(y = ..count.., fill = ..count..), 
            stat="count", 
@@ -235,7 +240,7 @@ ggplot(data = netflix, aes(x = Rating)) +
             stat = "count",
             vjust = -.5) +
   scale_fill_gradient(low = "lightcoral", high = "firebrick2")+
-  labs(x = "Rating", y = "Number of ratings", title = "Total Ratings")+
+  labs(x = "Rating", y = "Number of ratings", title = "Total Ratings by stars")+
   scale_y_continuous(limits=c(0,380000), labels = scales::comma)+
   coord_flip() + 
   theme_classic()
@@ -247,63 +252,16 @@ grid.raster(image, x = 0.80, y = 0.25, height = 0.23)
 
 ```{r include = FALSE}
 media = mean(netflix$Rating, na.rm = TRUE)
-media
-
 moda = names(which(table(netflix$Rating) == max(table(netflix$Rating))))
-moda
 ```
 
-Como se puede observar en el gráfico, las puntuaciones generalmente han sido positivas ya que la mayoria de los casos tienen una puntuación superior a 3.
+Como se puede observar en el gráfico, las puntuaciones generalmente han sido positivas ya que el mayor número de concentración de observaciones se encuentra entre 3 estrellas o más. De hecho, si realizamos la medía de todas las calificaciones vemos que es de `r media` estrellas.
 
-La calificación de 4 que ha sido dada por un total de 2926 usuarios, es la que se ha dado más veces.
-
-La calificación media de todas las películas es de 3.37.
+La calificación de 4 estrellas que ha sido dada por un total de 2926 usuarios, es la que se ha dado más veces.
 
 
-
-### Distribución de calificaciones por año
-
-```{r fig.align="center", fig.width=7, fig.height=4}
-df_movies = filter(df_movies, df_movies$MovieID %in% muestra_grupo)
-df_movies$MovieRelease = as.numeric(df_movies$MovieRelease)
-
-break_range = seq(from = 1920, to = 2010, by = 10)
-
-hist_plot1 = ggplot(data = df_movies) +
-  geom_histogram(aes(x = MovieRelease, y = ..count../sum(..count..)),
-                 breaks = break_range,
-                 color = c("darkgoldenrod2", "lightgoldenrod1", "lightblue", "palegreen3", 
-                           "lightpink2", "plum3", "steelblue3", "darkolivegreen3", "salmon3"),
-                 fill = c("darkgoldenrod1", "khaki1", "lightblue", "palegreen", "lightpink1", 
-                          "plum2", "steelblue1", "darkolivegreen2", "salmon1"),
-                 size = 1) +
-  geom_density(aes(x = MovieRelease, y = 10*..density..),
-               color = "black",
-               fill = "seashell3",
-               size = 1, 
-               alpha = 0.2,
-               show.legend = FALSE) +
-  scale_x_continuous(breaks = break_range) +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1), 
-                     limits = c(0, 0.5)) +
-  scale_color_gradient(low = "indianred1", high = "red2") +
-  ylab("% of movies") +
-  xlab("Movie release's decade") +
-  ggtitle("Percentage of movies released by decade") +
-  theme_minimal()
-
-ggplotly(hist_plot1)
-```
-
-Como podemos observar en el gráfico, el número de votaciones según la década sigue una distribución asimétrica negativa. 
-
-En 1920 apenas se dieron el 1.7% de votaciones, porcentaje que ha ido aumentando en las posteriores décadas hasta los 90 donde se alcanza el punto prominente con un 38% del total de calificaciones registradas en el presente estudio.  A principios de los 2000 el número de votaciones ha descendido aproximadamente un 10% respecto a la década anterior.
-
-Como se muestra, han sido en las últimas dos décadas, que figuran en nuestro estudio, donde se han dado la mayoría de las calificaciones, concretamente se han dado más de un 50% de las votaciones totales durante este período.
-
-
-## Distribución de valoraciones por mes
-```{r fig.align="center", fig.width=7, fig.height=4}
+### Distribución de calificaciones por mes
+```{r fig.cap='Porcentaje de calificaciones por mes.', fig.align="center", fig.width=7, fig.height=4}
 
 bar_plot2 = ggplot(data = netflix) +
   geom_bar(aes(x = Month, y = ..count../sum(..count..), fill = ..count../sum(..count..)),
@@ -331,8 +289,8 @@ Como se muestra en el gráfico la distribución de las calificaciones por meses 
 El mes de enero es el mes en el que se realizaron el menor número de calificaciones (6.8% del total).
 
 
-## Distribución de valoraciones por día
-```{r fig.align="center", fig.width=7, fig.height=4}
+### Distribución de calificaciones por día
+```{r fig.cap='Porcentaje de calificaciones por día de la semana.', fig.align="center", fig.width=7, fig.height=4}
 netflix$DayOfWeek = weekdays(netflix$RatingDate)
 
 bar_plot3 = ggplot(data = netflix) +
@@ -360,21 +318,22 @@ El martes es el día de la semana en el cual se han registrado más calificacion
 
 Como se observa, de lunes a jueves se encuentra más del 60% de las calificaciones y, el viernes y fin de semana son los días los cuales se puntúan un menor número de películas.
 
+
 ## Películas más votadas
 
-```{r message=FALSE, warning=FALSE, cache=TRUE, fig.align="center", fig.width=7, fig.height=4}
+```{r fig.cap='Películas más votadas',message=FALSE, warning=FALSE, cache=TRUE, fig.align="center", fig.width=7, fig.height=4}
 movies_table_title = sort(table(netflix$Title), decreasing = TRUE)
 movies_table_title = as.data.frame(movies_table_title)
 
 set.seed(2)
 ggplot(movies_table_title, aes(label = Var1, size = Freq, color = Freq, angle = sample(c(0,15,30, 45,60, 75,90, 105,120,135, 160), 250, replace = TRUE))) +
   geom_text_wordcloud_area(mask = png::readPNG("imgs/netflix-mask2.png"),
-    rm_outside = F) +
+                           rm_outside = T) +
   scale_color_gradient(low = "indianred1", high = "red2") +
   theme_minimal()
 
 
-wordcloud2(movies_table_title, size = 0.3, color = 'red')
+wordcloud2(movies_table_title, size = 0.3)
 ```
 [TODO]
 
@@ -425,7 +384,10 @@ Esta cantidad de calificaciones fue aumentando cada año hasta situarse en el 20
 
 El reto de películas, como se ha comentado recibió el mayor número de calificaciones en 2005, siendo estas cantidades:
 
-#Compara sus estadísticos y distribuciones(histogramas, boxplot, violin plot,. . . )
+
+## **Comparación de las películas**
+
+### Compara sus estadísticos y distribuciones(histogramas, boxplot, violin plot,. . . )
 
 ```{r message = FALSE, warning = FALSE, fig.align="center", fig.width=7, fig.height=4}
 #Distribución del score promedio por año.
@@ -440,7 +402,8 @@ res =  a %>%
 ```
 
 
-## Comparación de las 5 películas con mayor número de calificaciones
+### Comparación de las 5 películas con mayor número de calificaciones
+
 ```{r message = FALSE, warning = FALSE, fig.align="center", fig.width=7, fig.height=4}
 #Una vez sabemos el MovieID de las películas más votadas las filtramos:
 mas_votadas = filter(netflix, MovieID == names(orden[1:5]))
@@ -474,11 +437,7 @@ El martes es el día de la semana en el cual se han registrado más calificacion
 Como se observa, de lunes a jueves se encuentra más del 60% de las calificaciones y, el viernes y fin de semana son los días los cuales se puntúan un menor número de películas.
 
 
-
-### Película con mejor y peor calificación (gráfico palabras)
-
-### Película más votada y menos votada (gráfico palabras)
-
+### Película más votada y menos votada
 
 ```{r}
 #Más votada
@@ -530,31 +489,48 @@ grid.raster(image, x = 0.80, y = 0.35, height = 0.4)
 
 
 
+### Distribución de las películas por año de estreno
 
-### Analizar nº de votaciones/puntuación de cada película
+Para estudiar la distribución del número de películas que se estrenaron cada año, realizamos un histograma que muestre por cada década desde el 1920 al 2010 el porcentaje total de producciones realizadas para ese periodo de años. 
+
+```{r fig.cap='Porcentaje películas según la década de estreno.',fig.align="center", fig.width=7, fig.height=4}
+df_movies = filter(df_movies, df_movies$MovieID %in% muestra_grupo)
+df_movies$MovieRelease = as.numeric(df_movies$MovieRelease)
+
+break_range = seq(from = 1920, to = 2010, by = 10)
+
+hist_plot1 = ggplot(data = df_movies) +
+  geom_histogram(aes(x = MovieRelease, y = ..count../sum(..count..)),
+                 breaks = break_range,
+                 color = c("darkgoldenrod2", "lightgoldenrod1", "lightblue", "palegreen3", 
+                           "lightpink2", "plum3", "steelblue3", "darkolivegreen3", "salmon3"),
+                 fill = c("darkgoldenrod1", "khaki1", "lightblue", "palegreen", "lightpink1", 
+                          "plum2", "steelblue1", "darkolivegreen2", "salmon1"),
+                 size = 1) +
+  geom_density(aes(x = MovieRelease, y = 10*..density..),
+               color = "black",
+               fill = "seashell3",
+               size = 1, 
+               alpha = 0.2,
+               show.legend = FALSE) +
+  scale_x_continuous(breaks = break_range) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1), 
+                     limits = c(0, 0.5)) +
+  scale_color_gradient(low = "indianred1", high = "red2") +
+  ylab("% of movies") +
+  xlab("Movie release's decade") +
+  ggtitle("Percentage of movies released by decade") +
+  theme_minimal()
+
+ggplotly(hist_plot1)
+```
+
+Como podemos observar en el gráfico, el número de películas estrenada según la década sigue una distribución asimétrica positiva. 
+
+En netflix se valoraron solo 1.7% de películas estrenadas en la década 1920. Dicho porcentaje  ha ido aumentando en las posteriores décadas hasta los 90 donde se alcanza el punto prominente con un 38% del total de calificaciones registradas en el presente estudio.  A principios de los 2000 el número de votaciones ha descendido aproximadamente un 10% respecto a la década anterior, pero esto se debe al muestreo de películas que estamos analizando. 
+
+En general, se puede concluir que cuanto más moderna es la película más votaciones tiene, puesto que la gente prefiere visualizar producciones más actuales que antiguas. Esto también puede darse por el catálogo de Netflix, que dispone de películas más actuales. 
 
 
 
-
-## Relación fecha puntuación / calificación
-
-### ¿Cuántas puntuaciones hay por cada año?
-
-### Media del rating por año
-
-
-
-## Relación fecha release de la película / calificación
-
-### Relación fecha película con la fecha puntuación y la puntuación 
-
-### ¿Si las fechas de release y puntuación son cercanas, la puntuación es mejor o peor? Revisar la diferencia de las fechas
-
-
-## Tiempos
-
-### Tiempo medio que ha pasado desde el estreno de la película hasta que ha sido puntuada
-
-### Cantidad de tiempo entre estreno y calificación (Nº de casos)
-
-#<div/>
+<div/>
