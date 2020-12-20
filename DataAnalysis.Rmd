@@ -25,6 +25,7 @@ knitr::kable
 library(tidyverse)
 library(shiny)
 library(plotly) #Anitamed graphics
+library(emojifont) #Emoji icons
 library(lubridate) #Work with dates
 library(ggimage) #Gggplot images
 library(gganimate) #Anitamed graphics
@@ -39,10 +40,18 @@ library(bookdown) #Fig caption output
 library(reticulate) #Python
 ```
 
+
+&nbsp;
+
+
 <div style="text-align: justify">
 <center><img
 src="imgs/netflix-header.gif">
 </center>
+
+
+&nbsp;
+
 
 
 # **Introducción**
@@ -52,14 +61,14 @@ En el presente estudio se procederá a analizar el data set llamado *"Netflix Pr
 Antes de extraer la información y comenzar a trabajar sobre ella se ha procedido a visualizar a qué tipo de datos íbamos a enfrentarnos. El dataset contiene diversos archivos pero solo nos centraremos con los que vamos a trabajar en este estudio: 
 
 
-### **Combined Data**
+### Combined Data
 
 Los archivos *'combined_data_{nº}'* contienen la información de las puntuaciones de los usuarios para determinado código de película, así como el identificador de usuario y la fecha (día, mes y año) en la que se dio dicha valoración. 
 
 Esta base de datos cuenta con un tamaño de espacio en memoria demasiado elevado, por lo que se procederá a extraer los datos de 250 películas escogidas de manera aleatoria con una semilla ("2495"). 
 
 
-### **Movie titles**
+### Movie titles
 
 Otro de los archivos que se utilizarán en este estudio contiene el título de cada ID asociado a las películas además del año en el que se estrenó. En secciones posteriores explicaremos como realizaremos la inclusión de estos datos junto con los datos iniciales para obtener el dataset final con el que trabajaremos de forma más cómoda.
 
@@ -206,7 +215,7 @@ Una vez se han exportado los datos, leído y modelado podemos comenzar a trabaja
 
 ## **Estructura del modelo de datos**
 
-Una vez tenemos la tibble final sobre la que vamos a trabajar, procedemos a estudiar su estructura: 
+El primer paso será visualizar la estructura del dataset: 
 
 ```{r echo = FALSE}
 str(netflix)
@@ -235,12 +244,13 @@ A continuación se realizará un análisis en relación a las calificaciones de 
 
 ### ¿Cuántas calificaciones hay en total y cómo se distribuyen? 
 
+Con el fin de tener una visión global de cuántas calificaciones hay en total en nuestra muestra, representamos con un diagrama de barras la cantidad de diferentes calificaciones según el número de estrellas.
+
 
 ```{r fig.align="center", fig.width=7, fig.height=4, cache = TRUE}
 
 ggplot(data = netflix, aes(x = Rating)) +
   geom_bar(aes(y = ..count.., fill = ..count..), 
-           stat="count", 
            show.legend = FALSE) +
   geom_label(aes(label = ..count.., y = ..count..), 
             stat = "count",
@@ -258,16 +268,21 @@ grid.raster(image, x = 0.80, y = 0.25, height = 0.23)
 ```
 
 ```{r include = FALSE}
-media = mean(netflix$Rating, na.rm = TRUE)
+media = round(mean(netflix$Rating, na.rm = TRUE),2)
 moda = names(which(table(netflix$Rating) == max(table(netflix$Rating))))
 ```
 
-Como se puede observar en el gráfico, las puntuaciones generalmente han sido positivas ya que el mayor número de concentración de observaciones se encuentra entre 3 estrellas o más. De hecho, si realizamos la medía de todas las calificaciones vemos que es de `r media` estrellas.
+Como se puede observar en el gráfico, las puntuaciones generalmente han sido positivas ya que el mayor número de concentración de observaciones se encuentra entre 3 estrellas o más. De hecho, si realizamos la media de todas las calificaciones vemos que es de `r media` estrellas.
 
 La calificación de `r moda` estrellas es la moda con un total de 368895 votaciones.
 
 
+&nbsp;
+
+
 ### ¿Cuáles son las películas más votadas?
+
+Una vez visto el número total de calificaciones con el que trabajamos en este estudio, representamos con una nube de palabras cuáles han sido las películas más votadas.
 
 ```{r message=FALSE, warning=FALSE, cache=TRUE, fig.align="center", fig.width=7, fig.height=4}
 
@@ -275,31 +290,95 @@ movies_title = sort(table(netflix$Title), decreasing = TRUE)
 movies_title = as.data.frame(movies_title) %>%
   rename(Title = Var1)
 
-set.seed(2)
-ggplot(movies_title, aes(label = Title, 
-                         size = Freq, 
-                         color = Freq, 
-                         angle = sample(c(0,15,30, 45,60, 75,90, 105,120,135, 160), 250, replace = TRUE))) +
-  geom_text_wordcloud_area(mask = png::readPNG("imgs/netflix-mask2.png"),
-                           rm_outside = T) +
-  scale_color_gradient(low = "indianred1", high = "red2") +
-  theme_minimal()
-
-
 set.seed(2495)
 div(wordcloud2(movies_title, size = 0.39), align ="center")
 
 ```
+La representación muestra con el título más grande aquellas películas con más calificaciones sin importar si ha sido positiva o negativa. Como podemos observar destacan películas como: *Good morning, Vietnam*, *Lethal Weapon 3* y *Freaky Friday*.
 
 
-### ¿Afecta la estación al número de visualizaciones y calificaciones que hacen los usuarios?
+&nbsp;
+
+
+### ¿Cuál es la distribución de las calificaciones de la película más votada?
+
+Analizamos el número de calificaciones por estrellas de la película más votada.
+
+```{r message = FALSE, warning = FALSE, fig.align="center", fig.width=7, fig.height=4}
+#Más votadas
+data_morevoted = filter(netflix, Title == movies_title[1, 1])
+
+ggplot(data_morevoted, aes(x = Rating)) +
+  geom_bar(aes(y = ..count.., fill = ..count..), 
+           show.legend = FALSE) +
+  geom_label(aes(label = ..count.., y = ..count..), 
+            stat = "count",
+            vjust = -.5) +
+  scale_fill_gradient(low = "cadetblue1", high = "cadetblue4")+
+  labs(x = "Rating", y = "Number of ratings", title = data_morevoted$Title[1]) +
+  scale_y_continuous(limits=c(0,45000)) +
+  coord_flip() + 
+  theme_classic()
+
+#Image in the visualization 
+image = image_read("imgs/masvotada.jpg") 
+grid.raster(image, x = 0.80, y = 0.35, height = 0.4)
+```
+
+La película que ha obtenido el mayor número de calificaciones es *Good morning, Vietnam*, una película dramática estadounidense, estrenada en 1987, que trata sobre un locutor de radio que llega a Saigón a levantar el ánimo de las tropas en plena guerra entre EE. UU. y Vietnam.
+
+Esta película tiene un total de 82.949 calificaciones siendo la calificación de 4 la más abundante y con una calificación media superior a la media de todo el estudio. 
+
+
+&nbsp;
+
+
+### ¿Cuál es la distribución de las calificaciones de la película menos votada?
+
+Analizamos el número de calificaciones por estrellas de la película menos votada.
+
+```{r message = FALSE, warning = FALSE, fig.align="center", fig.width=7, fig.height=4}
+#Menos votada
+data_lessvoted = filter(netflix, Title == movies_title[nrow(movies_title), 1])
+
+ggplot(data_lessvoted, aes(x = Rating)) +
+  geom_bar(aes(y = ..count.., fill = ..count..), 
+           stat="count", 
+           show.legend = FALSE) +
+  geom_label(aes(label = ..count.., y = ..count..), 
+            stat = "count",
+            vjust = -.5) +
+  scale_fill_gradient(low = "darkgoldenrod1", high = "darkgoldenrod3") +
+  labs(x = "Rating", y = "Number of ratings", title = data_lessvoted$Title[1]) +
+  scale_y_continuous(limits=c(0,8)) +
+  coord_flip() + 
+  theme_classic()
+
+# Image in the visualization 
+image = image_read("imgs/menosvotada.jpg") 
+grid.raster(image, x = 0.80, y = 0.35, height = 0.4)
+```
+
+*Larryboy  and the Rumor Weed”* es una serie estadounidense de películas creadas por ordenador cuyos personajes son frutas y vegetales antropomórficos que cuentan y actúan en historias que transmiten temas morales basados en la cultura cristiana con referencias satíricas a la cultura popular y a eventos de actualidad.
+
+Esta película únicamente cuenta con 10 votos siendo la mayoría de los votos con calificación de 1 y con una nota media de 2.4.
+
+
+&nbsp;
+
+
+### ¿Afecta la estación del año al número de calificaciones que hacen los usuarios?
 
 Para comprobar si hay diferencia entre el número de votaciones que hay en total dependiedo del mes del año se ha representado la distribución porcentual en un diagrama de barras.
 
 ```{r fig.align="center", fig.width=7, fig.height=4, cache = TRUE}
 
-bar_plot2 = ggplot(data = netflix) +
-  geom_bar(aes(x = Month, y = ..count../sum(..count..), fill = ..count../sum(..count..)),
+prop_table_month = prop.table(table(netflix$Month)) %>% 
+  as.data.frame() %>% 
+  rename(Month = Var1)
+
+bar_plot2 = ggplot(data = prop_table_month, aes(x = Month, y = Freq)) +
+  geom_bar(stat = "identity",
            show.legend = FALSE,
            color = c("darkslategray3", "darkslategray3", "darkslategray3", "lightpink2", 
                      "lightpink2", "lightpink2", "lightgoldenrod2", "lightgoldenrod2", "lightgoldenrod2",
@@ -308,6 +387,10 @@ bar_plot2 = ggplot(data = netflix) +
                      "lightpink1", "lightpink1", "lightgoldenrod1", "lightgoldenrod1", "lightgoldenrod1",
                      "tan1", "tan1", "tan1"),
            size = 1) +
+  geom_text(aes(label = c(emoji("snowflake"), emoji("snowflake"), emoji("snowflake"),
+                          emoji("blossom"), emoji("blossom"), emoji("blossom"),
+                          emoji("sun_with_face"), emoji("sun_with_face"), emoji("sun_with_face"),
+                          emoji("maple_leaf"), emoji("maple_leaf"), emoji("maple_leaf"))), cex=10, family='EmojiOne') +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1), 
                      limits = c(0, 0.15)) +
   scale_x_discrete(labels = month.abb) +
@@ -316,24 +399,29 @@ bar_plot2 = ggplot(data = netflix) +
   ggtitle("Percentage of ratings by month") +
   theme_minimal()
   
-div(ggplotly(bar_plot2), align ="center")
+ div(ggplotly(bar_plot2), align ="center")
 
 ```
-Se observa en el gráfico que la distribución de las calificaciones por meses está relativamente compensada siendo octubre el mes en el cual se calificaron más películas con un 10% del total de votaciones, le sigue el mes de septiembre con un 9.9% y noviembre con un 8.9%. El mes de enero es el mes en el que se realizaron el menor número de calificaciones (6.8% del total).
+Se observa en el gráfico que la distribución de las calificaciones por meses está relativamente compensada siendo octubre el mes en el cual se calificaron más películas con un 10% del total de votaciones, le sigue el mes de septiembre con un 9.9% y noviembre con un 8.9%. En el mes de enero se realizaron el menor número de calificaciones (6.8% del total).
 
 Podemos deducir que el periodo de otoño, después de las vacaciones de verano es cuando los usuarios visualizan y votan más películas de la plataforma, lo que tiene sentido ya que con el cambio de estación y rutina la gente realiza planes o actividades más relacionadas con estar en casa.
 
-Además, podemos deducir que con ciertas festividades, como puede ser Halloween celebrada a finales de octubre, se pueden incrementar el número de visualizaciones y calificaciones ya que los usuarios tienden a ver películas de esta temática. En nuestro caso, el mes de octubre se encuentran varias películas clasificadas con el género de terror como: *Destino Final*, *Eaten Alive*, *Proteus* o *Killing Zoe*, entre otras.
+Además, podemos deducir que con ciertas festividades, como puede ser Halloween celebrada a finales de octubre, se pueden incrementar el número de visualizaciones y calificaciones ya que los usuarios tienden a ver películas de esta temática. En nuestro caso, en el mes de octubre se encuentran varias películas clasificadas con el género de terror como: *Destino Final*, *Eaten Alive*, *Proteus* o *Killing Zoe*, entre otras.
+
+
+&nbsp;
 
 
 ### ¿Afecta el día de la semana al número de visualizaciones y calificaciones que hacen los usuarios?
+
+Realizamos el mismo estudio de la distribución de calificaciones pero teniendo en cuenta en esta ocasión los días de la semana.
 
 ```{r fig.align="center", fig.width=7, fig.height=4, cache = TRUE}
 #Añadimos una variable nueva en el dataset que indique el día de la semana según la fecha de la calificación
 netflix$DayOfWeek = weekdays(netflix$RatingDate)
 
 bar_plot3 = ggplot(data = netflix) +
-  geom_bar(aes(x = DayOfWeek, y = ..count../sum(..count..), fill = ..count../sum(..count..)),
+  geom_bar(aes(x = DayOfWeek, y = ..count../sum(..count..)),
            show.legend = FALSE,
            color = c("indianred4", "lightgoldenrod2", "palevioletred2", "palegreen4", 
                      "tan2", "steelblue3", "mediumorchid4"),
@@ -352,15 +440,17 @@ div(ggplotly(bar_plot3), align ="center")
 
 ```
 
-El número de votaciones según el día de la semana sigue una distribución asimétrica positiva. Es decir, a principios de semana se califican más películas y, a medida que se acerca el fin de semana, el número de votaciones se reduce.El martes es el día de la semana en el cual se han registrado más calificaciones con un 17.77% del total, mientras que el sábado es el día en el cual se han calificado menos películas con un 9.82% del total.
+El número de votaciones según el día de la semana sigue una distribución asimétrica positiva. Es decir, a principios de semana se califican más películas y, a medida que se acerca el fin de semana, el número de votaciones se reduce. El martes es el día de la semana en el cual se han registrado más calificaciones con un 17.77% del total, mientras que el sábado es el día en el cual se han calificado menos películas con un 9.82%.
 
-Se observa que de lunes a jueves se encuentra más del 60% de las calificaciones y, el viernes y fin de semana son los días en los cuales se puntúan un menor número de películas. Esto se puede explicar a los planes que normalmente pueden tener los usuarios, ya que el fin de semana se hacen más planes fuera de casa, mientras que entre semana al ser día laboral la gente normalmente pasa más tiempo en casa y es más propensar a utilizar la plataforma. 
+Se observa que de lunes a jueves se encuentra más del 60% de las calificaciones y, el viernes y fin de semana son los días en los cuales se puntúan un menor número de películas. Esto se puede explicar a los planes que normalmente pueden tener los usuarios, ya que en el fin de semana se hacen más planes fuera de casa, mientras que entre semana al ser día laboral la gente normalmente pasa más tiempo en casa y es más propensar a utilizar la plataforma. 
 
+
+&nbsp;
 
 
 ### ¿Cómo se distribuyen las votaciones por año?
 
-La distribución de votaciones por años se estudiará en relación a las 10 películas más votadas: `r movies_title[10,1]`. El rango de años estudiado es desde el 1999 hasta el 2005.
+La distribución de votaciones por años se estudiará en relación a las 10 películas más votadas. El rango de años estudiado es desde el 1999 hasta el 2005.
 
 ```{r warning = FALSE, message = FALSE, fig.align="center", fig.width=7, fig.height=4, cache = TRUE}
 
@@ -386,15 +476,14 @@ line_plot = ggplot(movies_year_rating,
   xlab("Rating's year") +
   theme_minimal()
 
-div(ggplotly(line_plot), align ="center")
+div(ggplotly(line_plot, tooltip = c("x", "y", "colour")), align ="center")
 
 ```
 
 
-Inicialmente se observa que de las películas más votadas, solo 3 de ellas (*Good Morning vietnam*, *Lethal Weapon 3* y *Meet Joe Black*) tuvieron alguna puntuación en el 1999. Al año siguiente empezaron a calificarse 2 películas más (*Bad Boys* y *Final Destination*), en 2001 se sumó la película *Some Like It Hot*, y un año después las películas *The Rundown* y *Freaky Friday*. Seguidamente en 2003 comenzó a recibir calificaciones la película *The Grudge* y, finalmente, en 2004 empezó a ser calificada la película *Monster-in-Law*.
+Inicialmente se observa que de las películas más votadas, solo 3 de ellas (*Good Morning vietnam*, *Lethal Weapon 3* y *Meet Joe Black*) tuvieron alguna puntuación en el 1999. Al año siguiente empezaron a calificarse 2 películas más (*Bad Boys* y *Final Destination*), en 2001 se sumó *Some Like It Hot*, y un año después *The Rundown* y *Freaky Friday*. Seguidamente en 2003 comenzó a recibir calificaciones *The Grudge* y, finalmente, en 2004 empezó a ser calificada *Monster-in-Law*.
 
-La cantidad de calificaciones fue aumentando cada año hasta situarse el 2005 como el año en el cual todas las películas recibieron más calificaciones con excepción de 2 casos: *Freaky Friday* y *The Rundown* las cuales recibieron la mayor cantidad en el año 2004 con un total de 43.612 y 25.056 votos respectivamente.
-
+La cantidad de calificaciones fue aumentando cada año hasta situarse el 2005 como el año en el cual todas las películas recibieron más calificaciones con excepción de 2 casos: *Freaky Friday* y *The Rundown*, las cuales recibieron la mayor cantidad en el año 2004.
 
 Es lógico afirmar que con el paso de los años se realizan más votaciones ya que el uso de la plataforma Netflix ha ido aumentado y creciendo a la vez que se quedaban atrás otras formas de visualizar películas como pueda ser el alquiler o la compra. 
 
@@ -427,48 +516,37 @@ grid.raster(image, x = 0.75, y = 0.2, height = 0.35)
 ```
 
 
-Al igual que en el gráfico anterior, se observa que no todas las películas tienen votaciones en años más anteriores como el 1999, 2000 o 2001. Vemos que en todas las películas la media de la puntuación por año siempre se encuentra entre las 3 y 4 estrellas. Casos con excepciones podría ser *The Grudge*, que en el 2005 tiene una media por debajo de 2.99 estrellas. 
+Al igual que en el gráfico anterior, se observa que no todas las películas tienen votaciones en años como el 1999, 2000 o 2001. Vemos que la media de la puntuación por año de todas ellas siempre se encuentra entre las 3 y 4 estrellas. Casos con excepciones podría ser *The Grudge*, que en el 2005 obtuvo una media por debajo (2.99 estrellas). 
 
-*Good Morning, Vietnam* comenzó a ser calificada desde 1999 y su calificación ha ido evolucionando positivamente y siempre por encima de la media de calificaciones totales y, alcanzado su mayor puntuación en el año 2004 con una media de 3.90 estrellas.
+A destacar también las puntuaciones de *Freaky Friday* que con el paso de los años va disminuyendo su media, cuando otras como *Lethal Weapon 3*, *Bad Boys* o *Final destination* pasan por el caso contrario, donde su media de califación va aumentado. La película *Some Like It Hot* mantiene una media muy alta rozando casi las 4 estrellas y con una distribución muy estable durante todos los años, casi sin variación en su media.
 
-*Lethal Weapon 3* y *Meet Joe Black* también recibieron calificaciones durante este periodo de tiempo estando esta cercana a la media y, obteniendo la mayor calificación en el año 2005 con una puntuación igual a 3.93 en el caso de la primera película y en 2004 la segunda película con un total de 3.61 estrellas. 
+Analizando estos gráficos podemos llegar a la conclusión de que la película más calificada, lo que quiere decir que es más probable que sea la mas vista, no tiene porque ser la mejor. Por ejemplo,  *Good Morining, Vietnam* que fue la película más votada, no recibió la mejor calificación. De estas 10 películas, por ejemplo, podemos decir que *Some Like It Hot*, a pesar de ser menos votada, es considerada mejor película por los usuarios pues su media siempre es superior a 3.9 estrellas.
 
-*Bad Boys* y *Final Destination* comenzaron a ser calificadas a partir del año 2000 siendo su calificación inferior a la media los 3 y 4 años respectivamente y en los siguientes años esta comenzó a estar por encima. La calificación máxima la alcanzaron ambas en el año 2005 y la calificación fue de 3.77 y 3.54 respectivamente.
 
-*Some Like It Hot* se empezó a calificar en el año 2001 siendo cada puntuación media anual superior a la media total del estudio, siempre por encima del 3.99 y alcanzando la puntuación máxima en 2001 con una puntuación de 3.99.
-
-*Freaky Friday* y *The Rundown* recibieron las primeras calificaciones en el año 2003. La puntuación más alta de ambas se dio este mismo año con un total de 3.88 estrellas en ambas películas.
-
-Un año después empezó a recibir votaciones la película The Grudge con su máxima calificación en el año 2004 de 3.62 estrellas, calificación que decreció un año después.
-
-El último año con el que contamos, 2005, empezó a recibir calificaciones la película Monster-in-Law, que recibió un total de 3.43 estrellas.
-
-Analizando estos gráficos podemos llegar a algunas conclusiones como:
-
-La película más calificada, lo que quiere decir que es más probable que sea la mas vista, no tiene porque ser la mejor. Pues, en el caso de “Good Morining, Vietnam” esta fue la más votada pero no fue la que recibió la mejor calificación. De estas 10 películas, más votadas, por ejemplo, podemos decir que “Some Like It Hot” a pesar de ser una película menos votada que “Good Morning, Vietnam” es considerada mejor película por los usuarios pues su media siempre es superior a 3.9 estrellas.
-
-A destacar también las puntuaciones de *Freaky Friday* que con el paso de los años va bajando su media, cuando otras como *Lethal Weapon 3*, *Bad Boys* o *Final destination* pasan por el caso contrario, donde su media de califación va aumentando. La película *Some Like It Hot* mantiene una media muy alta rozando casi las 4 estrellas y con una distribución muy estable durante todos los años, casi sin variación en su media.
+&nbsp;
 
 
 ## **Comparación entre películas**
 
-A continuación se compararán y analizarán los datos de diferentes películas del dataset.
+En este apartado se analizarán y compararán los datos de diferentes películas del dataset.
+
+
+
 
 ### Comparamos las 5 películas más votadas
 
 A continuación se realiza una comparación de los estadísticos y distribuciones de las cinco películas con mayor número de valoraciones. Para realizar dicha comparación se exponen los datos en una tabla obtenida en Python con los siguientes datos:
 
-* MovieID
+* Título de la película (Title)
 * Número total de valoraciones (count)
-* Media de las valoraciones en estrellas
+* Media de las valoraciones en estrellas (mean)
 * Desviación estándar (std)
 * Calificación/valoración mínima en estrellas (min)
 * Calificación/valoración mínima en estrellas (max)
-* Calificación/valoración del 25% de las observaciones (25%)
-* Calificación/valoración del 50% de las observaciones (50%)
-* Calificación/valoración del 75% de las observaciones (75%)
+* Percentil 25 (25%)
+* Percentil 50 (50%)
+* Percentil 75 (75%)
 * La moda de las calificaciones (mode)
-* La mediana de las calificaciones (median)
 
 
 Además, se realiza un representación gráfica de tipo *boxplot* que ayude a visualizar la información.
@@ -478,9 +556,8 @@ import tabulate as tb
 import pandas as pd
 pd.set_option('display.max_columns', None)
 netflix_py = pd.read_csv("data/netflix.csv")
-res = pd.concat([netflix_py.groupby('MovieID')['Rating'].describe(),
-                      netflix_py.groupby('MovieID')['Rating'].agg(pd.Series.mode).rename('mode'),
-                      netflix_py.groupby('MovieID')['Rating'].agg(pd.Series.median).rename('median')
+res = pd.concat([netflix_py.groupby('Title')['Rating'].describe(),
+                      netflix_py.groupby('Title')['Rating'].agg(pd.Series.mode).rename('mode')
                      ], axis=1)
                      
 res = round(res.sort_values(by=['count'],ascending = False).head(5), 2)
@@ -502,77 +579,23 @@ boxplot = ggplot(data_boxplot, aes(Title, Rating, group=Title)) +
   geom_point(stat= "summary", shape=20, size=2, color="gray28") +
   theme(axis.text.x = element_text(angle = 45))
 
-div(ggplotly(boxplot, height = 550), align ="center")
+div(ggplotly(boxplot, height = 550, tooltip = c("Rating")), align ="center")
 
 ```
 
-Las cinco películas que más fueron clasificadas por los usuarios fueron: *Good morning, Vietnam* con una puntuación media de 3.85 estrellas, *Lethal Weapon 3* con 3.81 estrellas, *Bad boys* con 3.72 estrellas, *Freaky Friday*”* con una media de 3.55 y finalmente *Final Destination* con un 3.49 estrellas. Todas las películas, excepto las dos últimas, superan la puntuación media de todas las películas de este estudio, siendo esta de 3.56 estrellas.
+Las cinco películas que más fueron clasificadas por los usuarios fueron: *Good morning, Vietnam* con una puntuación media de 3.85 estrellas, *Lethal Weapon 3* con 3.81 estrellas, *Bad boys* con 3.72 estrellas, *Freaky Friday*”* con una media de 3.55 y finalmente *Final Destination* con un 3.49 estrellas. Todas ellas, excepto las dos últimas, superan la puntuación media del total de este estudio (3.56 estrellas).
 
-En las dos primeras películas la mayoría de las calificaciones son de 3, 4 y 5 estrellas, mientras que en el resto de las películas predomina la puntuación de 3 y 4 estrellas.
+Observamos que de las tres primeras películas, el 75% de las calificaciones es de 4 estrellas o menos, ya que vemos que la mediana coincide con el tercer cuartil. Los bigotes de estas películas, que representan cada uno el 25% de los datos fuera del rango intercuartílico, muestran que los usuarios han calificado con 2 o 5 estrellas, además de ver reflejados los valores atípicos donde la calificación ha sido de 1 estrella. 
 
-
-
-### ¿Cuál es la distribución de calificación de la película más votada?
-
-```{r message = FALSE, warning = FALSE, fig.align="center", fig.width=7, fig.height=4}
-#Más votadas
-data_morevoted = filter(netflix, Title == movies_title[1, 1])
-
-ggplot(data_morevoted, aes(x = Rating)) +
-  geom_bar(aes(y = ..count.., fill = ..count..), 
-           stat="count", 
-           show.legend = FALSE) +
-  geom_label(aes(label = ..count.., y = ..count..), 
-            stat = "count",
-            vjust = -.5) +
-  scale_fill_gradient(low = "cadetblue1", high = "cadetblue4")+
-  labs(x = "Rating", y = "Number of ratings", title = data_morevoted$Title[1]) +
-  scale_y_continuous(limits=c(0,45000)) +
-  coord_flip() + 
-  theme_classic()
-
-#Image in the visualization 
-image = image_read("imgs/masvotada.jpg") 
-grid.raster(image, x = 0.80, y = 0.35, height = 0.4)
-```
-
-La película que ha obtenido el mayor número de calificaciones es *Good morning, Vietnam*, una película dramática estadounidense, estrenada en 1987, que trata sobre un locutor de radio que llega a Saigón a levantar el ánimo de las tropas en plena guerra entre EE. UU. y Vietnam.
-
-Esta película tiene un total de 82.949 calificaciones siendo la calificación de 4 la más abundante y con una calificación media superior a la media de todo el estudio.
+Si nos centramos en las dos películas restante, vemos que su distribución es diferente. En estos casos, no existe bigote superior y se observa que las votaciones que predominan se encuentran entre 3 y 5 estrellas. El 50% de las calificaciones es de 4 o menos. En estas dos películas no hay valores atípicos ya hay más distribución de las puntuaciones de los usuarios que van desde 1 a 5 estrellas. 
 
 
-### ¿Cuál es la distribución de calificación de la película menos votada?
-
-```{r message = FALSE, warning = FALSE, fig.align="center", fig.width=7, fig.height=4}
-#Menos votada
-data_lessvoted = filter(netflix, Title == movies_title[nrow(movies_title), 1])
-
-ggplot(data_lessvoted, aes(x = Rating)) +
-  geom_bar(aes(y = ..count.., fill = ..count..), 
-           stat="count", 
-           show.legend = FALSE) +
-  geom_label(aes(label = ..count.., y = ..count..), 
-            stat = "count",
-            vjust = -.5) +
-  scale_fill_gradient(low = "darkgoldenrod1", high = "darkgoldenrod3") +
-  labs(x = "Rating", y = "Number of ratings", title = data_lessvoted$Title[1]) +
-  scale_y_continuous(limits=c(0,8)) +
-  coord_flip() + 
-  theme_classic()
-
-# Image in the visualization 
-image = image_read("imgs/menosvotada.jpg") 
-grid.raster(image, x = 0.80, y = 0.35, height = 0.4)
-```
-
-*Larryboy  and the Rumor Weed”* es una serie estadounidense de películas creadas por ordenador cuyos personajes son frutas y vegetales antropomórficos que cuentan y actúan en historias que transmiten temas morales basados en la cultura cristiana con referencias satíricas a la cultura popular y a eventos de actualidad.
-
-Esta película únicamente cuenta con 10 votos siendo la mayoría de los votos con calificación de 1 y con una nota media de 2.4.
+&nbsp;
 
 
 ### Distribución de las películas por año de estreno
 
-Para estudiar la distribución del número de películas que se estrenaron cada año, realizamos un histograma que muestre por cada década desde el 1920 al 2010 el porcentaje total de producciones realizadas para ese periodo de años. 
+Para estudiar la distribución del número de películas que se estrenaron cada año, realizamos un histograma que muestre por cada década desde el 1920 al 2010 el porcentaje total de filmes realizadas para ese rango de años. 
 
 ```{r fig.cap='Porcentaje películas según la década de estreno.',fig.align="center", fig.width=7, fig.height=4}
 
@@ -607,14 +630,19 @@ div(ggplotly(hist_plot1), align ="center")
 
 Como podemos observar en el gráfico, el número de películas estrenada según la década sigue una distribución asimétrica negativa. 
 
-En netflix se valoraron solo 1.7% de películas estrenadas en la década 1920. Dicho porcentaje  ha ido aumentando en las posteriores décadas hasta los 90 donde se alcanza el punto prominente con un 38% del total de calificaciones registradas en el presente estudio.  A principios de los 2000 el número de votaciones ha descendido aproximadamente un 10% respecto a la década anterior, pero esto se debe al muestreo de películas que estamos analizando. 
+En nuestros datos solo 4 películas (1,6%) fueron estrenadas en la década del 1920. Dicho porcentaje ha ido aumentando en las posteriores décadas hasta los 90 donde se alcanza el punto prominente con un 38% del total de estrenos. A principios de los 2000 el número de películas estrenadas ha descendido aproximadamente un 10% respecto a la década anterior, pero esto se debe al muestreo de películas que estamos analizando y no tiene por qué implicar una disminución en los estrenos de Netflix o producción de películas en general. 
 
-Han sido en las últimas dos décadas, que figuran en nuestro estudio, donde se han dado la mayoría de las calificaciones, concretamente un 50% del total. En general, se puede concluir que cuanto más moderna es la película más votaciones tiene, puesto que la gente prefiere visualizar producciones más actuales que antiguas. Esto también puede darse por el catálogo de Netflix, que dispone de películas más actuales. 
+Han sido en las últimas dos décadas, que figuran en nuestro estudio, donde se han dado la mayoría de los estrenos, concretamente más de 50% del total. En general, se puede concluir que el catálogo de Netfli dispone de películas más actuales. 
+
+
+&nbsp;
 
 
 ### ¿Afecta el año de estreno a la puntuación que los usuarios dan a una película?
 
-Como se ha comentado anteriormente, se añadió al dataset la variable *“YearsSiceRelease”* con el objetivo de analizar si la diferencia entre el año de estreno de la película y el año de cuando esta se ha calificado influye en el número de estrellas o no. 
+Como se ha comentado anteriormente, se añadió al dataset la variable *“YearsSinceRelease”* con el objetivo de analizar si la diferencia entre el año de estreno de la película y el año de cuando esta se ha calificado influye en el número de calificaciones y en el número de estrellas. 
+
+En algunos casos, la variable es un número negativo ya que el año de estreno es posterior a la votación, lo cuál no es posible. Esto se puede deber a errores en el dataset con la fecha de estreno de la película, ya que, por ejemplo, se podría tener en cuenta su año de estreno en DVD y no en cines. 
 
 ```{r fig.align="center", fig.width=10, fig.height=6}
 netflix %>%
@@ -626,8 +654,35 @@ netflix %>%
 ```
 
 
-En el presente gráfico se observa que el mayor número de calificaciones se da cuando han pasado un año o dos desde el estreno hasta la calificación, mientras que, el menor número de votaciones se dan cuando han pasado 20 o más años. Con esta representación se puede intuir que la variable *“YearsSiceRelease”* está correlacionada con el número de calificaciones. En cuanto al número de estrellas dado en las calificaciones, [TODO]
+En el presente gráfico se observa que el mayor número de calificaciones se da cuando han pasado un año o dos desde el estreno hasta la calificación, mientras que, el menor número de votaciones se dan cuando han pasado 20 o más años. Con esta representación se puede intuir que la variable *“YearsSiceRelease”* está correlacionada con el número de calificaciones.
 
+En cuanto al número de estrellas dado en las puntuaciones de los usuarios, vemos que no hay mucha diferencia entre si la película es más antigua o no, ya que por ejemplo, observamos que si han pasado solo 2 años o más de 40 del estreno, las califaciones de 3 o más estrellas aparecen con más frecuencia que las de 1 o 2. Podemos concluir por lo tanto que la antigüedad de la película no influye en el número de estrellas de las votaciones.
+
+
+&nbsp;
+
+
+# **Nuestra visión del análisis**
+
+En este análisis hemos podido estudiar las diferentes valoraciones de los usuarios de Netflix de una muestra de 250 películas de la plataforma. Concretamente se ha podido analizar:
+
+* Número total de calificaciones 
+* Película más y menos votada y su distribución en estrellas
+* 
+
+```{r message=FALSE, warning=FALSE, fig.align="center", fig.width=6, fig.height=6}
+
+set.seed(2)
+ggplot(movies_title, aes(label = Title, 
+                         size = Freq, 
+                         color = Freq, 
+                         angle = sample(c(0,15,30, 45,60, 75,90, 105,120,135, 160), 250, replace = TRUE))) +
+  geom_text_wordcloud_area(mask = png::readPNG("imgs/netflix-mask2.png"),
+                           rm_outside = T) +
+  scale_color_gradient(low = "indianred1", high = "red2") +
+  theme_minimal()
+
+```
 
 
 
