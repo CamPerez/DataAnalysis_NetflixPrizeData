@@ -666,9 +666,18 @@ En cuanto al número de estrellas dado en las puntuaciones de los usuarios, vemo
 
 En este análisis hemos podido estudiar las diferentes valoraciones de los usuarios de Netflix de una muestra de 250 películas de la plataforma. Concretamente se ha podido analizar:
 
-* Número total de calificaciones 
-* Película más y menos votada y su distribución en estrellas
-* 
+* Número total de calificaciones por estrellas
+* Película de la más a la menos votada (nube de palabras)
+* Distribución por estrellas de la película más y menos votada
+* Distribución de calificaciones por mes
+* Distribución de calificaciones por día de la semana
+* Distribución de calificaciones por año de las películas más votadas
+* Distribución del score promedio por año de las películas más votadas
+* Comparación estadísticos de las 5 películas más votadas
+* Número de películas estrenadas por década
+* Relación entre la calificación y la diferencia en años entre las votaciones y el estreno de las películas
+
+Con el fin de hacer un análisis más exhaustivo hubiese sido interesante disponer del género y duración de la película o más información de los usuarios como pueda ser la edad, el sexo o el tiempo que lleva suscrito a la plataforma.   
 
 ```{r message=FALSE, warning=FALSE, fig.align="center", fig.width=6, fig.height=6}
 
