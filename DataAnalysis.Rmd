@@ -262,7 +262,10 @@ Como se puede observar en el gráfico, las puntuaciones generalmente han sido po
 La calificación de `r moda` estrellas es la moda con un total de 368895 votaciones.
 
 
-### Distribución de calificaciones por mes
+### ¿Afecta la estación al número de visualizaciones y calificaciones que hacen los usuarios?
+
+Para comprobar si hay diferencia entre el número de votaciones que hay en total dependiedo del mes del año se ha representado la distribución porcentual en un diagrama de barras.
+
 ```{r fig.cap='Porcentaje de calificaciones por mes.', fig.align="center", fig.width=7, fig.height=4, cache = TRUE}
 
 bar_plot2 = ggplot(data = netflix) +
@@ -286,12 +289,13 @@ bar_plot2 = ggplot(data = netflix) +
 div(ggplotly(bar_plot2), align ="center")
 
 ```
-Como se muestra en el gráfico la distribución de las calificaciones por meses está más compensada siendo el mes de octubre el mes en el cual se calificaron más películas siendo este un 10% del total de votaciones, le sigue el mes de septiembre con un 9.9%.
+Se observa en el gráfico que la distribución de las calificaciones por meses está relativamente compensada siendo octubre el mes en el cual se calificaron más películas con un 10% del total de votaciones, le sigue el mes de septiembre con un 9.9% y noviembre con un 8.9%. El mes de enero es el mes en el que se realizaron el menor número de calificaciones (6.8% del total).
 
-El mes de enero es el mes en el que se realizaron el menor número de calificaciones (6.8% del total).
+Podemos deducir que el periodo de otoño, después de las vacaciones de verano es cuando los usuarios visualizan y votan más películas de la plataforma, lo que tiene sentido ya que con el cambio de estación y rutina la gente realiza planes o actividades más relacionadas con estar en casa.
 
 
-### Distribución de calificaciones por día
+### ¿Afecta el día de la semana al número de visualizaciones y calificaciones que hacen los usuarios?
+
 ```{r fig.cap='Porcentaje de calificaciones por día de la semana.', fig.align="center", fig.width=7, fig.height=4}
 #Añadimos una variable nueva en el dataset que indique el día de la semana según la fecha de la calificación
 netflix$DayOfWeek = weekdays(netflix$RatingDate)
@@ -547,7 +551,7 @@ div(ggplotly(hist_plot1), align ="center")
 
 ```
 
-Como podemos observar en el gráfico, el número de películas estrenada según la década sigue una distribución asimétrica positiva. 
+Como podemos observar en el gráfico, el número de películas estrenada según la década sigue una distribución asimétrica negativa. 
 
 En netflix se valoraron solo 1.7% de películas estrenadas en la década 1920. Dicho porcentaje  ha ido aumentando en las posteriores décadas hasta los 90 donde se alcanza el punto prominente con un 38% del total de calificaciones registradas en el presente estudio.  A principios de los 2000 el número de votaciones ha descendido aproximadamente un 10% respecto a la década anterior, pero esto se debe al muestreo de películas que estamos analizando. 
 
