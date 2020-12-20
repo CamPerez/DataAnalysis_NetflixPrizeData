@@ -320,11 +320,9 @@ div(ggplotly(bar_plot3), align ="center")
 
 ```
 
-El número de votaciones según el día de la semana sigue una distribución asimétrica positiva. Es decir, al principio se califican más películas y, a medida que se acerca el fin de semana, se reduce el número de votaciones. 
+El número de votaciones según el día de la semana sigue una distribución asimétrica positiva. Es decir, a principios de semana se califican más películas y, a medida que se acerca el fin de semana, el número de votaciones se reduce.El martes es el día de la semana en el cual se han registrado más calificaciones con un 17.77% del total, mientras que el sábado es el día en el cual se han calificado menos películas con un 9.82% del total.
 
-El martes es el día de la semana en el cual se han registrado más calificaciones con un 17.77% del total, mientras que el sábado es el día en el cual se han calificado menos películas con un 9.82% del total.
-
-Como se observa, de lunes a jueves se encuentra más del 60% de las calificaciones y, el viernes y fin de semana son los días los cuales se puntúan un menor número de películas.
+Se observa que de lunes a jueves se encuentra más del 60% de las calificaciones y, el viernes y fin de semana son los días en los cuales se puntúan un menor número de películas. Esto se puede explicar a los planes que normalmente pueden tener los usuarios, ya que el fin de semana se hacen más planes fuera de casa, mientras que entre semana al ser día laboral la gente normalmente pasa más tiempo en casa y es más propensar a utilizar la plataforma. 
 
 
 ## Películas más votadas
