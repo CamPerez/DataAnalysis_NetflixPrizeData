@@ -231,7 +231,7 @@ str(netflix)
 ### ¿Cuántos calificaciones hay en total y cómo se distribuyen? 
 
 
-```{r  fig.cap='Número total de calificaciones por estrella.', fig.align="center", fig.width=7, fig.height=4}
+```{r  fig.cap='Número total de calificaciones por estrella.', fig.align="center", fig.width=7, fig.height=4, cache = TRUE}
 
 ggplot(data = netflix, aes(x = Rating)) +
   geom_bar(aes(y = ..count.., fill = ..count..), 
@@ -263,7 +263,7 @@ La calificación de `r moda` estrellas es la moda con un total de 368895 votacio
 
 
 ### Distribución de calificaciones por mes
-```{r fig.cap='Porcentaje de calificaciones por mes.', fig.align="center", fig.width=7, fig.height=4}
+```{r fig.cap='Porcentaje de calificaciones por mes.', fig.align="center", fig.width=7, fig.height=4, cache = TRUE}
 
 bar_plot2 = ggplot(data = netflix) +
   geom_bar(aes(x = Month, y = ..count../sum(..count..), fill = ..count../sum(..count..)),
@@ -341,8 +341,9 @@ ggplot(movies_title, aes(label = Title,
   scale_color_gradient(low = "indianred1", high = "red2") +
   theme_minimal()
 
+
 set.seed(2495)
-wordcloud2(movies_title, size = 0.39)
+div(wordcloud2(movies_title, size = 0.39), align ="center")
 
 ```
 [TODO]
@@ -354,20 +355,29 @@ wordcloud2(movies_title, size = 0.39)
 ```{python}
 
 import pandas as pd
+pd.set_option('display.max_columns', None)
 netflix_py = pd.read_csv("data/netflix.csv")
-res = pd.concat([netflix_py.groupby('MovieID')['Rating'].describe(),
-                      netflix_py.groupby('MovieID')['Rating'].agg(pd.Series.mode).rename('mode'),
-                      netflix_py.groupby('MovieID')['Rating'].agg(pd.Series.median).rename('median')
-                     ], axis=1).T
+res = pd.concat([netflix_py.groupby('Title')['Rating'].describe(),
+                      netflix_py.groupby('Title')['Rating'].agg(pd.Series.mode).rename('mode'),
+                      netflix_py.groupby('Title')['Rating'].agg(pd.Series.median).rename('median')
+                     ], axis=1)
                      
 print(res)
+
+
+res2 = pd.concat([netflix_py.groupby('Title')['Rating'].describe(),
+                      netflix_py.groupby('Title')['Rating'].agg(pd.Series.mode).rename('mode'),
+                      netflix_py.groupby('Title')['Rating'].agg(pd.Series.median).rename('median')
+                     ], axis=1).T
+                     
+print(res2)
 
 ```
 
 
 ## Las 10 películas más votadas
 
-```{r fig.cap='Calificaciones por año de las películas más votadas.', fig.align="center", fig.width=7, fig.height=4}
+```{r warning = FALSE, message = FALSE, fig.cap='Calificaciones por año de las películas más votadas.', fig.align="center", fig.width=7, fig.height=4}
 
 #Tabla agrupada por película y año la valoración.
 movies_year_rating = table(netflix$Title, netflix$Year)
@@ -401,26 +411,29 @@ Como podemos observar, las 10 películas más calificadas fueron las puntuadas a
 
 Esta cantidad de calificaciones fue aumentando cada año hasta situarse en el 2005 con el año en el cual cada película recibió más calificaciones con excepción de 2 casos: Freaky Friday y te Rundown quienes recibieron la mayor cantidad en el año 2004 con un total de 43.612 y 25.056 votos respectivamente.
 
-El reto de películas, como se ha comentado recibió el mayor número de calificaciones en 2005, siendo estas cantidades:
+El resto de películas, como se ha comentado recibió el mayor número de calificaciones en 2005, siendo estas cantidades:
 
 
 ### Distribución del score promedio por año de las 10 películas con mayor número de valoraciones.
 
-```{r fig.cap='Calificación media por año y película.', message = FALSE, warning = FALSE, fig.align="center", fig.width=12, fig.height=8}
+```{r fig.cap='Calificación media por año y película.', message = FALSE, warning = FALSE, fig.align="center", fig.width=10, fig.height=8}
 
 data = filter(netflix, Title %in% movies_title[1:10,1]) %>%
   group_by(Title, Year) %>%
   summarise(mean = mean(Rating))
 
-bar_plot_facet = ggplot(data, aes(fill=Title, y=mean, x=Year)) + 
-  geom_bar(position="dodge", stat="identity") +
+ggplot(data, aes(fill=Title, y=mean, x=Year)) + 
+  geom_bar(position="dodge", stat="identity", show.legend = FALSE) +
   facet_wrap(~Title, scales='free') +
   scale_x_discrete(limits=c("1999", "2000", "2001", "2002", "2003", "2004", "2005")) + 
   scale_y_discrete(limits=c(0:5)) +
-  theme(panel.spacing.x=unit(1, "lines") , panel.spacing.y=unit(3,"lines"),
-        axis.text.x = element_text(angle = 45))
+  theme(panel.spacing.x=unit(1, "lines") , panel.spacing.y=unit(1.5,"lines"),
+        axis.text.x = element_text(angle = 90))
 
-div(ggplotly(bar_plot_facet), align ="center")
+# Image in the visualization 
+image = image_read("imgs/icon-netflix.png") 
+grid.raster(image, x = 0.75, y = 0.2, height = 0.35)
+
 
 ```
 
@@ -429,7 +442,7 @@ div(ggplotly(bar_plot_facet), align ="center")
 
 ### Comparación de las 5 películas con mayor número de calificaciones
 
-```{r fig.cap='Comparativa estádistica de las 5 películas más votadas.', message = FALSE, warning = FALSE, fig.align="center", fig.width=7, fig.height=4}
+```{r fig.cap='Comparativa estádistica de las 5 películas más votadas.', message = FALSE, warning = FALSE}
 
 data_boxplot = filter(netflix, Title %in% movies_title[1:5, 1])
 
@@ -441,7 +454,7 @@ boxplot = ggplot(data_boxplot, aes(Title, Rating, group=Title)) +
   geom_point(stat= "summary", shape=20, size=2, color="gray28") +
   theme(axis.text.x = element_text(angle = 45))
 
-div(ggplotly(boxplot), align ="center")
+div(ggplotly(boxplot, height = 550), align ="center")
 
 ```
 
@@ -472,7 +485,7 @@ image = image_read("imgs/masvotada.jpg")
 grid.raster(image, x = 0.80, y = 0.35, height = 0.4)
 ```
 
-La película que ha obtenido el mayor número de calificaciones es Good morning, Vietnam, una película dramática estadounidense estrenada en 1987. 
+La película que ha obtenido el mayor número de calificaciones es *"Good morning, Vietnam"*, una película dramática estadounidense estrenada en 1987. 
 
 
 ```{r fig.cap='Calificaciones de la película menos votada.', message = FALSE, warning = FALSE, fig.align="center", fig.width=7, fig.height=4}
@@ -530,7 +543,8 @@ hist_plot1 = ggplot(data = df_movies) +
   ggtitle("Percentage of movies released by decade") +
   theme_minimal()
 
-ggplotly(hist_plot1)
+div(ggplotly(hist_plot1), align ="center")
+
 ```
 
 Como podemos observar en el gráfico, el número de películas estrenada según la década sigue una distribución asimétrica positiva. 
@@ -540,11 +554,11 @@ En netflix se valoraron solo 1.7% de películas estrenadas en la década 1920. D
 En general, se puede concluir que cuanto más moderna es la película más votaciones tiene, puesto que la gente prefiere visualizar producciones más actuales que antiguas. Esto también puede darse por el catálogo de Netflix, que dispone de películas más actuales. 
 
 
-```{r fig.cap='Calificaciones según la diferencia entre años de estreno y de votación.', fig.align="center", fig.width=20, fig.height=4}
+```{r fig.cap='Calificaciones según la diferencia entre años de estreno y de votación.', fig.align="center", fig.width=20, fig.height=20}
 netflix %>%
   count(YearsSinceRelease, Rating) %>%
   ggplot(mapping = aes(x = Rating, y = YearsSinceRelease)) +
-  geom_tile(mapping = aes(fill = n, width = 0.7, height = 0.7), 
+  geom_tile(mapping = aes(fill = n, width = 0.9, height = 0.9), 
             size = 2) +
   scale_fill_gradientn(colours = c("lightgoldenrod1", "coral",  "orange", "purple", "maroon")) +
   theme_minimal()
