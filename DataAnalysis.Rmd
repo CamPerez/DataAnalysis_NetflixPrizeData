@@ -1,24 +1,24 @@
 ---
-title: "Análisis: Netfliz Prize Program"
+title: "Análisis: Netflix Prize Program"
 author: "Laura Basalo Tur, Camila Pérez Arévalo"
 date: "23/12/2020"
 always_allow_html: true
 output:
-  pdf_document:
-    toc: yes
   html_document:
     number_sections: no
     toc: yes
     code_folding: hide
     theme: cosmo
     highlight: tango
+  pdf_document:
+    toc: yes
 ---
 
 ```{r setup, include=FALSE, cache = TRUE}
 knitr::opts_chunk$set(echo = TRUE)
 knitr::kable
-library(tidyverse)
-library(shiny)
+library(tidyverse) #Data science pacgakes
+library(shiny) #Interactive web
 library(plotly) #Anitamed graphics
 library(emojifont) #Emoji icons
 library(lubridate) #Work with dates
@@ -27,11 +27,10 @@ library(gganimate) #Anitamed graphics
 library(wordcloud) #Word cloud generator
 library(wordcloud2) #Word cloud generator
 library(ggwordcloud) #Word cloud generator
-library(magick)
+library(magick) #Image processing
 library(knitr) #Dynamic report generation
 library(gridExtra) #Miscellaneous Functions for "Grid" Graphics
 library(grid) #Add Grid to a Plot
-library(bookdown) #Fig caption output
 library(reticulate) #Python
 ```
 
@@ -53,22 +52,21 @@ src="imgs/netflix-header.gif">
 
 En el presente estudio se procederá a analizar el data set llamado *"Netflix Prize data"* obtenido en la página web Kaggle. Dicho dataset se creó como una competición para encontrar el mejor algoritmo de predicción de la puntuación que los usuarios dan a las películas de la plataforma. 
 
-Antes de extraer la información y comenzar a trabajar sobre ella se ha procedido a visualizar a qué tipo de datos íbamos a enfrentarnos. El dataset contiene diversos archivos pero solo nos centraremos con los que vamos a trabajar en este estudio: 
-
+El objetivo es analizar diversos aspectos y estadísticos de las variables y representarlo gráficamente. No obstante, antes de extraer la información y comenzar a trabajar sobre ella se ha procedido a visualizar qué tipo de datos están disponibles:
 
 ### Combined Data
 
 Los archivos *'combined_data_{nº}'* contienen la información de las puntuaciones de los usuarios para determinado código de película, así como el identificador de usuario y la fecha (día, mes y año) en la que se dio dicha valoración. 
 
-Esta base de datos cuenta con un tamaño de espacio en memoria demasiado elevado, por lo que se procederá a extraer los datos de 250 películas escogidas de manera aleatoria con una semilla ("2495"). 
+Esta base de datos ocupada un gran espacio en memoria (más de 2GB), por lo que se procederá a extraer los datos de 250 películas escogidas de manera aleatoria con una semilla ("2495"). 
 
 
 ### Movie titles
 
-Otro de los archivos que se utilizarán en este estudio contiene el título de cada ID asociado a las películas además del año en el que se estrenó. En secciones posteriores explicaremos como realizaremos la inclusión de estos datos junto con los datos iniciales para obtener el dataset final con el que trabajaremos de forma más cómoda.
+Otro de los archivos que se utilizarán en este estudio contiene el título de cada ID asociado a las películas y su respectivo año de estreno. En secciones posteriores se explicará cómo se ha realizado la inclusión de estos datos junto con los iniciales para obtener el dataset final con el que se trabajará de forma más cómoda.
 
 
-Una vez realizado este proceso generaremos una nueva variable para incluirla en nuestro estudio ya que sería interesante medir la diferencia de años transcurridos desde el estreno hasta la puntuación de las diferentes películas ("YearsSinceRelease").
+Una vez realizado este proceso se generará una nueva variable para incluirla en el estudio ya que sería interesante medir la diferencia de años transcurridos desde el estreno hasta la puntuación de las diferentes películas.
 
 
 &nbsp;
@@ -76,22 +74,22 @@ Una vez realizado este proceso generaremos una nueva variable para incluirla en 
 
 # **Carga y lectura de datos**
 
-El primer paso para realizar la carga de datos es leer el fichero *"filas_ID_combined_all.txt"* de donde obtendremos por cada ID de película el número del fichero donde se encuentran las puntuaciones de cada usuario y las posiciones de la fila inicial y final de estas. De la misma forma, cargaremos los cuatro ficheros *'combined_data_{nº}'* con la información de las puntuaciones de las películas.
+El primer paso para realizar la carga de datos es leer el fichero *"filas_ID_combined_all.txt"*, del cual se obtendrá , por cada ID de película, el número del fichero donde se encuentran las puntuaciones de cada usuario y las posiciones de la fila inicial y final de estas. De la misma forma, se exportarán los cuatro ficheros *'combined_data_{nº}'* con la información de las puntuaciones de las películas.
 
-Ya que el fichero *"filas_ID_combined_all.txt"* cuenta con la información de todas las películas, después de exportarlo realizaremos un filtrado para quedarnos solo con las filas de las 250 películas que nos interesan estudiar. Seguidamente, utilizaremos la función *obtain_movies* para que, pasados los parámetros del fichero *"filas_ID_combined_all.txt"* y el ID de *'combined_data_{nº}'*, calculemos todas las posiciones a leer y nos devuelva un *combined_data* con solo las observaciones de las películas que sabemos que se encuentran en dicho fichero. 
+Ya que el fichero *"filas_ID_combined_all.txt"* cuenta con la información de todas las películas, después de exportarlo se realizará un filtrado para obtener solo las filas de las 250 películas que son interesantes para este estudio. Seguidamente, se utilizará la función *obtain_movies* para que, pasados los parámetros del fichero *"filas_ID_combined_all.txt"* y el ID de *'combined_data_{nº}'*, se calculen todas las posiciones o filas a leer y devuelva un *combined_data* con solo las observaciones de las películas que se saben que se encuentran en dicho fichero. 
 
 ```{r cache = TRUE}
 #Función que obtiene los datos de filas específicas
 obtain_movies = function(idx, combined_data, index_data){
-  #Obtenemos las películas del archivo a leer (1,2,3 o 4)
+  #Se obtienen las películas del archivo a leer (1,2,3 o 4)
   rows_data = filter(index_data, data == idx)
   rows_data = select(rows_data, fila, fila_final)
   
-  #Por cada fila guardamos el rango de posiciones a leer en el fichero
+  #Por cada fila se guarda el rango de posiciones a leer en el fichero
   range =  apply(rows_data, 1, function(i){c(i[1]:i[2])})
   range = unlist(range)
   
-  #Nos quedamos solo con los datos de las películas de la muestra
+  #Se extraen los datos de las películas de la muestra
   return (slice(combined_data[[idx]], range))
 }
 ```
@@ -99,31 +97,31 @@ obtain_movies = function(idx, combined_data, index_data){
 
 
 ```{r message = FALSE, cache = TRUE}
-#Obtenemos nuestra muestra de películas
+#Se obtiene la muestra de películas
 n_muestra = 250
 set.seed(2495)
 muestra_grupo = sample(1:17770, n_muestra, replace = FALSE)
 
-#Leemos el fichero y nos quedamos con el índice de las películas de nuestra muestra
+#Se lee el fichero y nos quedamos con el índice de las películas de la muestra
 filas_ID_combined_all = read.csv("data/filas_ID_combined_all.txt")
 filas_ID_combined_all %<>% 
   filter(filas_ID_combined_all$ID %in% muestra_grupo) %>%
   select(ID, fila, fila_final, data)
 
-#Cargamos los ficheros con la información de Netflix
+#Se cargan los ficheros con la información de Netflix
 file_names = list.files("data/", pattern = "^combined_data") 
 file_list = lapply(file_names, function(i){read_tsv(file.path("data", i), col_names = FALSE)})
 
-#Leemos las observaciones de las películas de nuestra muestra por cada fichero
+#Se leen las observaciones de las películas de la muestra por cada fichero
 data_list = lapply(seq_along(file_list), FUN = obtain_movies, combined_data = file_list, index_data = filas_ID_combined_all)
 
-#Juntamos los datos de las películas de los 4 ficheros
+#Se juntan los datos de las películas de los 4 ficheros
 df_ratings = bind_rows(data_list)
 
-#Exportamos los datos de las películas de nuestra muestra
+#Se exportan los datos de las películas de la muestra
 write.table(df_ratings,"data/data_sample.txt", row.names = FALSE, col.names = FALSE)
 
-#Eliminamos variables que ya no son útiles
+#Se eliminan variables que ya no son útiles
 rm(data_list, file_list, file_names, filas_ID_combined_all)
 ```
 
@@ -134,17 +132,17 @@ rm(data_list, file_list, file_names, filas_ID_combined_all)
 # **Construcción del modelo de datos**
 
 
-Una vez hemos exportado los ficheros necesarios y filtrado las observaciones de interés, procedemos a la limpieza de datos y construcción del modelo de datos final. Generamos un dataframe que por cada observación contenga: ID de la película, ID de usuario, calificación y fecha de calificación.
+Una vez se han exportado los ficheros necesarios y filtrado las observaciones de interés, se procede a la limpieza y construcción del modelo de datos final. Se generará un dataset que por cada observación contenga: ID de la película, ID de usuario, calificación y fecha de calificación.
 
 ```{r message = FALSE, warning = FALSE, cache = TRUE}
 #Se asigna una posición a cada observación para posteriormente indicar el id de película de cada una de ellas
 df_ratings = df_ratings %>% 
              mutate(Idx = row_number()) 
 
-#Guardamos la fila donde empieza cada película
+#Se guarda la fila donde empieza cada película
 movie_rows = grep(":", df_ratings$X1) 
 
-#Añadimos el id de la película a cada posición y eliminamos el caracter ":"
+#Se añade el id de la película a cada posición y se elimina el caracter ":"
 rows_ID = df_ratings %>% 
           filter(Idx %in% movie_rows) %>%
           mutate(X1 = as.integer(gsub(":","",X1)))
@@ -165,7 +163,7 @@ netflix %<>%
 rm(df_ratings, movie_rows, rows_ID, reps)
 ```
 
-Con el objetivo de completar nuestro dataset, realizamos la unión de la tibble *netflix* con los datos exportados del fichero *movies_titles.csv*, añadiendo así la variable del nombre de la película y el año de estreno. Una vez se ha realizado el *inner join*, se procede al cambio de tipo de cada variable para que concuerde con la información que representan. 
+Con el objetivo de completar el dataset, se realiza la unión de la tibble *netflix* con los datos exportados del fichero *movies_titles.csv*, añadiendo así la variable del nombre de la película y el año de estreno. Una vez se ha realizado el *inner join*, se procede al cambio de tipo de cada variable para que concuerde con la información que representan. 
 
 
 ```{r, message = FALSE, cache = TRUE}
@@ -197,7 +195,7 @@ netflix = mutate(netflix, YearsSinceRelease = year(RatingDate) - MovieRelease)
 #Se transforma la variable YearsSinceRelease a numérica
 netflix$YearsSinceRelease = as.numeric(netflix$YearsSinceRelease)
 
-#Adicionalmente, dividimos la variable RatingDate en: día, mes y año
+#Adicionalmente, se divide la variable RatingDate en: día, mes y año
 #Se ordenan las posiciones de las columnas y se indican su nuevo nombre
 netflix %<>%
   separate(RatingDate,into = c("Year","Month","Day"), sep = "-", remove = FALSE) %>%
@@ -205,7 +203,7 @@ netflix %<>%
   mutate(Idx = row_number()) %>%
   select(Idx, MovieID, Title, UserID, Rating, Day, Month, Year, RatingDate, MovieRelease,  YearsSinceRelease)
 
-#Exportamos el fichero preparado y construido para empezar a trabajar en su análisis
+#Se exporta el fichero preparado y se construye para empezar a trabajar en su análisis
 write.csv(netflix, "data/netflix.csv", row.names = FALSE)
 ```
 
@@ -215,32 +213,31 @@ write.csv(netflix, "data/netflix.csv", row.names = FALSE)
 
 # **Analizando nuestros datos**
 
-Una vez se han exportado los datos, leído y modelado podemos comenzar a trabajar con ellos y analizarlos.
-
+Una vez se han exportado, leído y modelado los datos se procede a analizar y trabajar con ellos.
 
 ## **Estructura del modelo de datos**
 
-El primer paso será visualizar la estructura del dataset: 
+El primer paso es visualizar la estructura del dataset: 
 
 ```{r echo = FALSE}
 str(netflix)
 ```
 
-* **Idx:** Variable numérica que determina la posición o índice de cada observación del dataset.
+* **Idx:** Variable cuantitativa discreta que determina la posición o índice de cada observación del dataset.
 
-* **MovieID:** Variable [TODO] que identifica a cada película con un ID determinado, este ID está asociado a un título que será representado por la variable *"Title"*.
+* **MovieID:** Variable cualitativa que identifica a cada película con un ID determinado, este ID está asociado a un título que será representado por la variable *"Title"*.
 
-* **Title:** Variable con datos definidos como caracteres. Esta variable representa el título de cada una de las películas identificadas con un ID en la variable *"MovieID"*.
+* **Title:** Variable cualitativa que representa el título de cada una de las películas identificadas con un ID en la variable *"MovieID"*.
 
-* **UserID:** Variable con datos definidos como caracteres que representa el ID único del usuario que ha calificado la película.
+* **UserID:** Variable cualitativa que representa el ID único del usuario que ha calificado la película.
 
-* **Rating:** Variable numérica ordinal que representa la calificación que ha hecho cada usuario de las películas que ha puntuado. Esta calificación puede ser dentro del rango [1,2,3,4,5], donde 1 estrella representa la calificación más baja y 5 estrellas la calificación más alta.
+* **Rating:** Variable cuantitativa ordinal que representa la calificación que ha hecho cada usuario de las películas que ha puntuado. Esta calificación puede ser dentro del rango [1,2,3,4,5], donde 1 estrella representa la calificación más baja y 5 estrellas la calificación más alta.
 
-* **RatingDate:** Variable definida como tipo **date*, que representa la fecha en la cual el usuario realizó la calificación de una determinada película.
+* **RatingDate:** Variable cuantitativa continua definida como tipo *date*, que representa la fecha en la cual el usuario realizó la calificación de una determinada película. También disponemos de las variables cuantitativas **Year**, **Month** y **Day** generadas al separar **RatingDate**.
+ 
+* **MovieRelease:** Variable cuantitativa discreta que indica el año en el cual se estrenó la película. El año de estreno puede referirse tanto a estreno de una determinada película en el cine como en DVD.
 
-* **MovieRelease:** Variable numérica que indica el año en el cual se estrenó la película. El año de estreno puede referirse tanto a estreno de una determinada película en el cine como en DVD.
-
-* **YearsSinceRelease:** Variable numérica la cual se ha calculado mediante la resta de RatingDate y MovieRelease. Esta variable indica el número de años que ha pasado desde que se ha estrenado una determinada película hasta que el usuario la ha calificado.
+* **YearsSinceRelease:** Variable cuantitativa discreta la cual se ha calculado mediante la resta de RatingDate y MovieRelease. Esta variable indica el número de años que ha pasado desde que se ha estrenado una determinada película hasta que el usuario la ha calificado.
 
 
 &nbsp;
@@ -248,12 +245,12 @@ str(netflix)
 
 ## **Calificaciones de las películas**
 
-A continuación se realizará un análisis en relación a las calificaciones de los usuarios y su relación con otras variables.
+A continuación se realiza un análisis de las calificaciones de los usuarios y su relación con otras variables del dataset.
 
 
 ### ¿Cuántas calificaciones hay en total y cómo se distribuyen? 
 
-Con el fin de tener una visión global de cuántas calificaciones hay en total en nuestra muestra, representamos con un diagrama de barras la cantidad de diferentes calificaciones según el número de estrellas.
+Con el fin de tener una visión global de cuántas calificaciones hay en total en la muestra, se representa con un diagrama de barras la cantidad de diferentes calificaciones según el número de estrellas.
 
 
 ```{r fig.align="center", fig.width=7, fig.height=4, cache = TRUE}
@@ -263,7 +260,8 @@ ggplot(data = netflix, aes(x = Rating)) +
            show.legend = FALSE) +
   geom_label(aes(label = ..count.., y = ..count..), 
             stat = "count",
-            vjust = -.5) +
+            vjust = -.5,
+            size = 5) +
   scale_fill_gradient(low = "lightcoral", high = "firebrick2")+
   labs(x = "Rating", y = "Number of ratings", title = "Total Ratings by stars")+
   scale_y_continuous(limits=c(0,380000), labels = scales::comma)+
@@ -281,9 +279,9 @@ media = round(mean(netflix$Rating, na.rm = TRUE),2)
 moda = names(which(table(netflix$Rating) == max(table(netflix$Rating))))
 ```
 
-Como se puede observar en el gráfico, las puntuaciones generalmente han sido positivas ya que el mayor número de concentración de observaciones se encuentra entre 3 estrellas o más. De hecho, si realizamos la media de todas las calificaciones vemos que es de `r media` estrellas.
+Como se puede observar en el gráfico, las puntuaciones generalmente han sido positivas ya que el mayor número de observaciones se encuentra concentrado entre 3 estrellas o más. De hecho, si realizamos la media de todas las calificaciones vemos que es de `r media` estrellas.
 
-La calificación de `r moda` estrellas es la moda con un total de 368895 votaciones.
+La calificación de `r moda` estrellas es la moda con un total de 368895 votaciones, por lo que se puede deducir que la muestra de películas de este estudio los usuaarios han dado, en general, calificaciones más positivas.
 
 
 &nbsp;
@@ -291,19 +289,21 @@ La calificación de `r moda` estrellas es la moda con un total de 368895 votacio
 
 ### ¿Cuáles son las películas más votadas?
 
-Una vez visto el número total de calificaciones con el que trabajamos en este estudio, representamos con una nube de palabras cuáles han sido las películas más votadas.
+Una vez visto el número total de calificaciones con el que se trabaja en este estudio, a continuación se representa con una nube de palabras el título de las películas con un tamaño relativo al número de calificaciones que le han dado los usuarios sin tener en cuenta el número de estrellas.
 
 ```{r message=FALSE, warning=FALSE, cache=TRUE, fig.align="center", fig.width=7, fig.height=4}
-
+#Se calcula de forma ordenada la cantidad de observaciones por película
 movies_title = sort(table(netflix$Title), decreasing = TRUE)
 movies_title = as.data.frame(movies_title) %>%
   rename(Title = Var1)
 
+#Representaciñon gráfica
 set.seed(2495)
 div(wordcloud2(movies_title, size = 0.39), align ="center")
 
 ```
-La representación muestra con el título más grande aquellas películas con más calificaciones sin importar si ha sido positiva o negativa. Como podemos observar destacan películas como: *Good morning, Vietnam*, *Lethal Weapon 3* y *Freaky Friday*.
+
+Como podemos observar destacan películas como: *Good morning, Vietnam*, *Lethal Weapon 3* y *Freaky Friday*.
 
 
 &nbsp;
@@ -311,23 +311,28 @@ La representación muestra con el título más grande aquellas películas con m�
 
 ### ¿Cuál es la distribución de las calificaciones de la película más votada?
 
-Analizamos el número de calificaciones por estrellas de la película más votada.
+Se analiza el número de calificaciones por estrellas de la película más votada.
 
-```{r message = FALSE, warning = FALSE, fig.align="center", fig.width=7, fig.height=4}
-#Más votadas
+```{r message = FALSE, warning = FALSE, fig.align="center", fig.width=10}
+#Se obtiene la película más votada, la primera de la tabla ordenada
 data_morevoted = filter(netflix, Title == movies_title[1, 1])
 
+#Representación gráfica
 ggplot(data_morevoted, aes(x = Rating)) +
   geom_bar(aes(y = ..count.., fill = ..count..), 
            show.legend = FALSE) +
   geom_label(aes(label = ..count.., y = ..count..), 
             stat = "count",
-            vjust = -.5) +
-  scale_fill_gradient(low = "cadetblue1", high = "cadetblue4")+
-  labs(x = "Rating", y = "Number of ratings", title = data_morevoted$Title[1]) +
+            vjust = -.5,
+            size = 5) +
+  scale_fill_gradient(low = "cadetblue1", 
+                      high = "cadetblue4")+
+  labs(x = "Rating", 
+       y = "Number of ratings", 
+       title = data_morevoted$Title[1]) +
   scale_y_continuous(limits=c(0,45000)) +
   coord_flip() + 
-  theme_classic()
+  theme(text = element_text(size = 20))
 
 #Image in the visualization 
 image = image_read("imgs/masvotada.jpg") 
@@ -336,7 +341,7 @@ grid.raster(image, x = 0.80, y = 0.35, height = 0.4)
 
 La película que ha obtenido el mayor número de calificaciones es *Good morning, Vietnam*, una película dramática estadounidense, estrenada en 1987, que trata sobre un locutor de radio que llega a Saigón a levantar el ánimo de las tropas en plena guerra entre EE. UU. y Vietnam.
 
-Esta película tiene un total de 82.949 calificaciones siendo la calificación de 4 la más abundante y con una calificación media superior a la media de todo el estudio. 
+Esta película tiene un total de 82.949 calificaciones siendo la de 4 estrellas la más frecuente y con una media de 3.85, superior a la del estudio (`r media`). 
 
 
 &nbsp;
@@ -344,33 +349,38 @@ Esta película tiene un total de 82.949 calificaciones siendo la calificación d
 
 ### ¿Cuál es la distribución de las calificaciones de la película menos votada?
 
-Analizamos el número de calificaciones por estrellas de la película menos votada.
+Se analiza también el número de calificaciones por estrellas de la película menos votada.
 
-```{r message = FALSE, warning = FALSE, fig.align="center", fig.width=7, fig.height=4}
-#Menos votada
+```{r message = FALSE, warning = FALSE, fig.align="center", fig.width=10}
+#Se obtiene la película menos votada, la última de la tabla ordenada
 data_lessvoted = filter(netflix, Title == movies_title[nrow(movies_title), 1])
 
+#Representación gráfica
 ggplot(data_lessvoted, aes(x = Rating)) +
   geom_bar(aes(y = ..count.., fill = ..count..), 
            stat="count", 
            show.legend = FALSE) +
   geom_label(aes(label = ..count.., y = ..count..), 
             stat = "count",
-            vjust = -.5) +
-  scale_fill_gradient(low = "darkgoldenrod1", high = "darkgoldenrod3") +
-  labs(x = "Rating", y = "Number of ratings", title = data_lessvoted$Title[1]) +
+            vjust = -.5,
+            size = 5) +
+  scale_fill_gradient(low = "darkgoldenrod1", 
+                      high = "darkgoldenrod3") +
+  labs(x = "Rating", 
+       y = "Number of ratings", 
+       title = data_lessvoted$Title[1]) +
   scale_y_continuous(limits=c(0,8)) +
   coord_flip() + 
-  theme_classic()
+  theme(text = element_text(size = 20))
 
 # Image in the visualization 
 image = image_read("imgs/menosvotada.jpg") 
 grid.raster(image, x = 0.80, y = 0.35, height = 0.4)
 ```
 
-*Larryboy  and the Rumor Weed”* es una serie estadounidense de películas creadas por ordenador cuyos personajes son frutas y vegetales antropomórficos que cuentan y actúan en historias que transmiten temas morales basados en la cultura cristiana con referencias satíricas a la cultura popular y a eventos de actualidad.
+*Larryboy and the Rumor Weed”* forma parte de una serie estadounidense de películas creadas por ordenador cuyos personajes son frutas y vegetales antropomórficos que cuentan y actúan en historias que transmiten temas morales basados en la cultura cristiana con referencias satíricas a la cultura popular y a eventos de actualidad.
 
-Esta película únicamente cuenta con 10 votos siendo la mayoría de los votos con calificación de 1 y con una nota media de 2.4.
+Esta película únicamente cuenta con 10 votos siendo la mayoría de ellos con calificación de 1 estrella y con una nota media de 2.4.
 
 
 &nbsp;
@@ -382,11 +392,13 @@ Para comprobar si hay diferencia entre el número de votaciones que hay en total
 
 ```{r fig.align="center", fig.width=7, fig.height=4, cache = TRUE}
 
+#Se calcula la frecuencia en % de cada mes
 prop_table_month = prop.table(table(netflix$Month)) %>% 
   as.data.frame() %>% 
   rename(Month = Var1)
 
-bar_plot2 = ggplot(data = prop_table_month, aes(x = Month, y = Freq)) +
+#Representación gráfica
+bar_plot2 = ggplot(prop_table_month, aes(x = Month, y = Freq)) +
   geom_bar(stat = "identity",
            show.legend = FALSE,
            color = c("darkslategray3", "darkslategray3", "darkslategray3", "lightpink2", 
@@ -411,11 +423,11 @@ bar_plot2 = ggplot(data = prop_table_month, aes(x = Month, y = Freq)) +
  div(ggplotly(bar_plot2, tooltip = c("Month", "Freq")), align ="center")
 
 ```
-Se observa en el gráfico que la distribución de las calificaciones por meses está relativamente compensada siendo octubre el mes en el cual se calificaron más películas con un 10% del total de votaciones, le sigue el mes de septiembre con un 9.9% y noviembre con un 8.9%. En el mes de enero se realizaron el menor número de calificaciones (6.8% del total).
+Se observa en el gráfico que la distribución de las calificaciones por meses está relativamente compensada, siendo octubre el mes en el cual se calificaron más películas con un 10% del total de votaciones, le sigue el mes de septiembre con un 9.9% y noviembre con un 8.9%. En el mes de enero se realizaron el menor número de calificaciones (6.8% del total).
 
-Podemos deducir que el periodo de otoño, después de las vacaciones de verano es cuando los usuarios visualizan y votan más películas de la plataforma, lo que tiene sentido ya que con el cambio de estación y rutina la gente realiza planes o actividades más relacionadas con estar en casa.
+Se puede deducir que el periodo de otoño, después de las vacaciones de verano, es cuando los usuarios visualizan y votan más películas de la plataforma, lo que tiene sentido ya que con el cambio de estación y rutina la gente realiza planes o actividades más relacionadas con estar en casa.
 
-Además, podemos deducir que con ciertas festividades, como puede ser Halloween celebrada a finales de octubre, se pueden incrementar el número de visualizaciones y calificaciones ya que los usuarios tienden a ver películas de esta temática. En nuestro caso, en el mes de octubre se encuentran varias películas clasificadas con el género de terror como: *Destino Final*, *Eaten Alive*, *Proteus* o *Killing Zoe*, entre otras.
+Además, se puede intuir que con ciertas festividades, como puede ser Halloween celebrada a finales de octubre, se incrementa el número de visualizaciones y calificaciones ya que los usuarios tienden a ver películas de terror. En este caso, en octubre se encuentran valoraciones de películas clasificadas con dicho género: *Destino Final*, *Eaten Alive*, *Proteus* o *Killing Zoe*, entre otras.
 
 
 &nbsp;
@@ -423,12 +435,13 @@ Además, podemos deducir que con ciertas festividades, como puede ser Halloween 
 
 ### ¿Afecta el día de la semana al número de visualizaciones y calificaciones que hacen los usuarios?
 
-Realizamos el mismo estudio de la distribución de calificaciones pero teniendo en cuenta en esta ocasión los días de la semana.
+Realizamos el mismo estudio de la distribución de calificaciones pero teniendo en cuenta en esta ocasión los días de la semana. Para ello, se ha creado una nueva variable en el data set ***DayOfWeek*** que, dada la fecha de *RatingDate* con la función *weekdays* nos proporciona el día de la semana para día del calendario en concreto.
 
 ```{r fig.align="center", fig.width=7, fig.height=4, cache = TRUE}
-#Añadimos una variable nueva en el dataset que indique el día de la semana según la fecha de la calificación
+#Se añade una variable nueva en el dataset que indique el día de la semana según la fecha de la calificación
 netflix$DayOfWeek = weekdays(netflix$RatingDate)
 
+#Representación gráfica
 bar_plot3 = ggplot(data = netflix) +
   geom_bar(aes(x = DayOfWeek, y = ..count../sum(..count..)),
            show.legend = FALSE,
@@ -449,30 +462,41 @@ div(ggplotly(bar_plot3), align ="center")
 
 ```
 
-El número de votaciones según el día de la semana sigue una distribución asimétrica positiva. Es decir, a principios de semana se califican más películas y, a medida que se acerca el fin de semana, el número de votaciones se reduce. El martes es el día de la semana en el cual se han registrado más calificaciones con un 17.77% del total, mientras que el sábado es el día en el cual se han calificado menos películas con un 9.82%.
+El número de votaciones según el día de la semana sigue una distribución asimétrica positiva. Es decir, a principios de semana se califican más películas y, a medida que se acerca el fin de semana, el número de votaciones se reduce. El martes es el día en el cual se han registrado más calificaciones con un 17.77% del total, mientras que el sábado se han calificado menos películas con un 9.82%.
 
-Se observa que de lunes a jueves se encuentra más del 60% de las calificaciones y, el viernes y fin de semana son los días en los cuales se puntúan un menor número de películas. Esto se puede explicar a los planes que normalmente pueden tener los usuarios, ya que en el fin de semana se hacen más planes fuera de casa, mientras que entre semana al ser día laboral la gente normalmente pasa más tiempo en casa y es más propensar a utilizar la plataforma. 
+Se observa que de lunes a jueves se encuentra más del 60% de las calificaciones y, el viernes y fin de semana son los días en los cuales se puntúan un menor número de películas. Esto se puede explicar a los hábitos que normalmente pueden tener los usuarios, ya que en el fin de semana se suelen realizar más planes fuera de casa, mientras que entre semana, al ser día laboral, la gente normalmente pasa más tiempo en casa y es más propensa a utilizar la plataforma. 
 
+Con la finalidad de comprobar si los usuarios dan calificación de menor o mayor estrellas según el día, se ha calculado la media de estrellas por día de la semana con el total de datos de la muestra:
+
+```{r message = FALSE, warning = FALSE}
+#Nota media por día de la semana
+mean_by_day = group_by(netflix, DayOfWeek) %>%
+  summarise(mean = mean(Rating))
+
+knitr::kable(mean_by_day)
+```
+
+Como se puede ver, la media no varía apenas entre un día u otro y siempre gira entorno a las 3.5 estrellas, por lo que se concluye que el día de la semana no afecta a la calificación que da el usuario.
 
 &nbsp;
 
 
 ### ¿Cómo se distribuyen las votaciones por año?
 
-La distribución de votaciones por años se estudiará en relación a las 10 películas más votadas. El rango de años estudiado es desde el 1999 hasta el 2005.
+La distribución de votaciones por años se estudia en relación a las 10 películas más votadas. El rango de años va desde el 1999 hasta el 2005.
 
 ```{r warning = FALSE, message = FALSE, fig.align="center", fig.width=7, fig.height=4, cache = TRUE}
 
-#Tabla agrupada por película y año de la valoración.
+#Tabla agrupada por película y año de la valoración
 movies_year_rating = table(netflix$Title, netflix$Year)
 movies_year_rating = as.data.frame(movies_year_rating)
 
+#Se filtran las 10 películas más votadas 
 movies_year_rating %<>% 
   rename(MovieTitle = Var1, Year = Var2) %>% 
   filter(MovieTitle %in% movies_title[1:10,1])
   
-
-#Representación gráfica.
+#Representación gráfica
 line_plot = ggplot(movies_year_rating, 
                    aes(x = Year, y = Freq, 
                        group = MovieTitle, 
@@ -490,46 +514,52 @@ div(ggplotly(line_plot, tooltip = c("x", "y", "colour")), align ="center")
 ```
 
 
-Inicialmente se observa que de las películas más votadas, solo 3 de ellas (*Good Morning vietnam*, *Lethal Weapon 3* y *Meet Joe Black*) tuvieron alguna puntuación en el 1999. Al año siguiente empezaron a calificarse 2 películas más (*Bad Boys* y *Final Destination*), en 2001 se sumó *Some Like It Hot*, y un año después *The Rundown* y *Freaky Friday*. Seguidamente en 2003 comenzó a recibir calificaciones *The Grudge* y, finalmente, en 2004 empezó a ser calificada *Monster-in-Law*.
+Inicialmente se observa que de las películas más votadas, solo 3 de ellas (*Good Morning vietnam*, *Lethal Weapon 3* y *Meet Joe Black*) tuvieron alguna puntuación en el 1999. Al año siguiente empezaron a calificarse 2 películas más (*Bad Boys* y *Final Destination*), en 2001 se sumó *Some Like It Hot*, y un año después *The Rundown* y *Freaky Friday*. Seguidamente, en 2003 comenzó a recibir calificaciones *The Grudge* y, por último, en 2004 empezó a ser calificada *Monster-in-Law*.
 
-La cantidad de calificaciones fue aumentando cada año hasta situarse el 2005 como el año en el cual todas las películas recibieron más calificaciones con excepción de 2 casos: *Freaky Friday* y *The Rundown*, las cuales recibieron la mayor cantidad en el año 2004.
+La cantidad de calificaciones fue aumentando cada año hasta situarse el 2005 donde todas las películas recibieron más calificaciones con excepción de 2 casos: *Freaky Friday* y *The Rundown*, las cuales tuvieron su auge en el 2004.
 
-Es lógico afirmar que con el paso de los años se realizan más votaciones ya que el uso de la plataforma Netflix ha ido aumentado y creciendo a la vez que se quedaban atrás otras formas de visualizar películas como pueda ser el alquiler o la compra. 
+Es lógico afirmar que con el paso de los años se realizan más votaciones ya que el uso de la plataforma *Netflix* ha ido aumentado y creciendo a la vez que se quedaban atrás otras formas de visualizar películas como pueda ser el alquiler o la compra. 
 
 ### ¿Cómo se distribuye el score promedio por año?
 
-Visualizaremos la distribución del score promedio por año con las 10 películas más votadas. El rango de años estudiado es desde el 1999 hasta el 2005.
+Se visualiza la distribución del score promedio por año con las 10 películas más votadas. El rango de años estudiado es desde el 1999 hasta el 2005.
 
-```{r fig.cap='Calificación media por año y película.', message = FALSE, warning = FALSE, fig.align="center", cache = TRUE}
+```{r message = FALSE, warning = FALSE, fig.align="center", cache = TRUE}
 
+#Se agrupan los datos por título y año de la calificación y se obtiene la media del score
 data = filter(netflix, Title %in% movies_title[1:10,1]) %>%
   group_by(Title, Year) %>%
   summarise(mean = mean(Rating))
 
+#Representación gráfica
 ggplot(data, aes(fill=Title, y=mean, x=Year)) + 
-  geom_bar(position="dodge", stat="identity", show.legend = FALSE) +
+  geom_bar(position="dodge", 
+           stat="identity", 
+           show.legend = FALSE) +
   geom_text(aes(label = round(mean, 2), y = round(mean, 2)), 
             show.legend = FALSE,
             vjust = -.4,
-            size = 3) +
+            size = 4) +
   facet_wrap(~Title, scales='free') +
   scale_x_discrete(limits=c("1999", "2000", "2001", "2002", "2003", "2004", "2005")) + 
   scale_y_discrete(limits=c(0:5)) +
-  theme(panel.spacing.x=unit(1, "lines") , panel.spacing.y=unit(1.5,"lines"),
+  theme(panel.spacing.x=unit(1, "lines"), 
+        panel.spacing.y=unit(1.5,"lines"),
+        axis.text=element_text(size=12),
         axis.text.x = element_text(angle = 90))
 
-# Image in the visualization 
+#Imagen
 image = image_read("imgs/icon-netflix.png") 
 grid.raster(image, x = 0.75, y = 0.2, height = 0.35)
 
 ```
 
 
-Al igual que en el gráfico anterior, se observa que no todas las películas tienen votaciones en años como el 1999, 2000 o 2001. Vemos que la media de la puntuación por año de todas ellas siempre se encuentra entre las 3 y 4 estrellas. Casos con excepciones podría ser *The Grudge*, que en el 2005 obtuvo una media por debajo (2.99 estrellas). 
+Al igual que en el gráfico anterior, se observa que no todas las películas tienen votaciones en años como el 1999, 2000 o 2001. Se puede ver que la media de la puntuación por año de todas ellas siempre se encuentra entre las 3 y 4 estrellas. Casos con excepciones podría ser *The Grudge*, que en el 2005 obtuvo una media por debajo (2.99 estrellas). 
 
 A destacar también las puntuaciones de *Freaky Friday* que con el paso de los años va disminuyendo su media, cuando otras como *Lethal Weapon 3*, *Bad Boys* o *Final destination* pasan por el caso contrario, donde su media de califación va aumentado. La película *Some Like It Hot* mantiene una media muy alta rozando casi las 4 estrellas y con una distribución muy estable durante todos los años, casi sin variación en su media.
 
-Analizando estos gráficos podemos llegar a la conclusión de que la película más calificada, lo que quiere decir que es más probable que sea la mas vista, no tiene porque ser la mejor. Por ejemplo,  *Good Morining, Vietnam* que fue la película más votada, no recibió la mejor calificación. De estas 10 películas, por ejemplo, podemos decir que *Some Like It Hot*, a pesar de ser menos votada, es considerada mejor película por los usuarios pues su media siempre es superior a 3.9 estrellas.
+Analizando estos gráficos se puede llegar a la conclusión de que la película más calificada, lo que quiere decir que es más probable que sea la mas vista, no tiene porque ser la mejor. Por ejemplo, *Good Morining, Vietnam* que fue la película más votada, no recibió la mejor calificación. De estas 10 películas, podemos decir que *Some Like It Hot*, a pesar de ser menos votada, es considerada mejor por los usuarios pues su media siempre es superior a 3.9 estrellas.
 
 
 &nbsp;
@@ -537,14 +567,11 @@ Analizando estos gráficos podemos llegar a la conclusión de que la película m
 
 ## **Comparación entre películas**
 
-En este apartado se analizarán y compararán los datos de diferentes películas del dataset.
-
-
-
+En este apartado se analizan y comparan los datos de diferentes películas del dataset.
 
 ### Comparamos las 5 películas más votadas
 
-A continuación se realiza una comparación de los estadísticos y distribuciones de las cinco películas con mayor número de valoraciones. Para realizar dicha comparación se exponen los datos en una tabla obtenida en Python con los siguientes datos:
+A continuación se realiza una comparación de los estadísticos y distribuciones de las cinco películas con mayor número de valoraciones. Para realizar dicha comparación se exponen los datos en una tabla obtenida en *Python* con los siguientes datos:
 
 * Título de la película (Title)
 * Número total de valoraciones (count)
@@ -572,14 +599,15 @@ res = pd.concat([netflix_py.groupby('Title')['Rating'].describe(),
 res = round(res.sort_values(by=['count'],ascending = False).head(5), 2)
             
 print(tb.tabulate(res, headers='keys', tablefmt='psql'))
-
 ```
 
 
 ```{r message = FALSE, warning = FALSE}
 
+#Se filtran las 5 películas más votadas
 data_boxplot = filter(netflix, Title %in% movies_title[1:5, 1])
 
+#Representación gráfica
 boxplot = ggplot(data_boxplot, aes(Title, Rating, group=Title)) +
   geom_boxplot(
     fill = c("lightsalmon1", "palegreen2", "tomato2", "thistle3", "paleturquoise2" ), 
@@ -592,11 +620,11 @@ div(ggplotly(boxplot, height = 550, tooltip = c("Rating")), align ="center")
 
 ```
 
-Las cinco películas que más fueron clasificadas por los usuarios fueron: *Good morning, Vietnam* con una puntuación media de 3.85 estrellas, *Lethal Weapon 3* con 3.81 estrellas, *Bad boys* con 3.72 estrellas, *Freaky Friday*”* con una media de 3.55 y finalmente *Final Destination* con un 3.49 estrellas. Todas ellas, excepto las dos últimas, superan la puntuación media del total de este estudio (3.56 estrellas).
+Las cinco películas que más fueron clasificadas por los usuarios son: *Good morning, Vietnam* con una puntuación media de 3.85 estrellas, *Lethal Weapon 3* con 3.81, *Bad boys* con 3.72, *Freaky Friday*”* con una media de 3.55 y finalmente *Final Destination* con 3.49. Todas ellas, excepto las dos últimas, superan la puntuación media del total de este estudio (`r media` estrellas).
 
-Observamos que de las tres primeras películas, el 75% de las calificaciones es de 4 estrellas o menos, ya que vemos que la mediana coincide con el tercer cuartil. Los bigotes de estas películas, que representan cada uno el 25% de los datos fuera del rango intercuartílico, muestran que los usuarios han calificado con 2 o 5 estrellas, además de ver reflejados los valores atípicos donde la calificación ha sido de 1 estrella. 
+Se observa que de las tres primeras películas, el 75% de las calificaciones es de 4 estrellas o menos, ya que la mediana coincide con el tercer cuartil. Los bigotes de estas películas, que representan cada uno el 25% de los datos fuera del rango intercuartílico, muestran que los usuarios han calificado con 2 o 5 estrellas, además de ver reflejados los valores atípicos donde la calificación ha sido de 1 estrella. 
 
-Si nos centramos en las dos películas restante, vemos que su distribución es diferente. En estos casos, no existe bigote superior y se observa que las votaciones que predominan se encuentran entre 3 y 5 estrellas. El 50% de las calificaciones es de 4 o menos. En estas dos películas no hay valores atípicos ya hay más distribución de las puntuaciones de los usuarios que van desde 1 a 5 estrellas. 
+En las dos películas restante se puede ver que su distribución es diferente. En estos casos, no existe bigote superior y se observa que las votaciones que predominan se encuentran entre 3 y 5 estrellas. El 50% de las calificaciones es de 4 o menos. En estas dos películas no hay valores atípicos ya hay más distribución de las puntuaciones de los usuarios que van desde 1 a 5 estrellas. 
 
 
 &nbsp;
@@ -604,9 +632,9 @@ Si nos centramos en las dos películas restante, vemos que su distribución es d
 
 ### Distribución de las películas por año de estreno
 
-Para estudiar la distribución del número de películas que se estrenaron cada año, realizamos un histograma que muestre por cada década desde el 1920 al 2010 el porcentaje total de filmes realizadas para ese rango de años. 
+Para estudiar la distribución del número de películas que se estrenaron cada año, se realiza un histograma que muestre por cada década desde el 1920 al 2010 el porcentaje total de filmes realizadas para ese rango de años. 
 
-```{r fig.cap='Porcentaje películas según la década de estreno.',fig.align="center", fig.width=7, fig.height=4}
+```{r fig.align="center", fig.width=7, fig.height=4}
 
 break_range = seq(from = 1920, to = 2010, by = 10)
 
@@ -637,11 +665,11 @@ div(ggplotly(hist_plot1), align ="center")
 
 ```
 
-Como podemos observar en el gráfico, el número de películas estrenada según la década sigue una distribución asimétrica negativa. 
+Como se puede observar en el gráfico, el número de películas estrenadas según la década sigue una distribución asimétrica negativa. 
 
-En nuestros datos solo 4 películas (1,6%) fueron estrenadas en la década del 1920. Dicho porcentaje ha ido aumentando en las posteriores décadas hasta los 90 donde se alcanza el punto prominente con un 38% del total de estrenos. A principios de los 2000 el número de películas estrenadas ha descendido aproximadamente un 10% respecto a la década anterior, pero esto se debe al muestreo de películas que estamos analizando y no tiene por qué implicar una disminución en los estrenos de Netflix o producción de películas en general. 
+En los datos solo 4 películas (1,6%) fueron estrenadas en la década del 1920. Dicho porcentaje ha ido aumentando en las posteriores décadas hasta los 90, donde se alcanza el punto prominente con un 38% del total de estrenos. A principios de los 2000 el número de películas estrenadas ha descendido aproximadamente un 10% respecto a la década anterior, pero esto se debe al muestreo de películas que se está analizando y no tiene porque implicar una disminución en los estrenos de Netflix o producción de películas en general. 
 
-Han sido en las últimas dos décadas, que figuran en nuestro estudio, donde se han dado la mayoría de los estrenos, concretamente más de 50% del total. En general, se puede concluir que el catálogo de Netfli dispone de películas más actuales. 
+Han sido en las últimas dos décadas, que figuran en este estudio, donde se han dado la mayoría de los estrenos, concretamente más del 50% del total. En general, se puede concluir que el catálogo de Netflix dispone de películas más actuales. 
 
 
 &nbsp;
@@ -651,21 +679,23 @@ Han sido en las últimas dos décadas, que figuran en nuestro estudio, donde se 
 
 Como se ha comentado anteriormente, se añadió al dataset la variable *“YearsSinceRelease”* con el objetivo de analizar si la diferencia entre el año de estreno de la película y el año de cuando esta se ha calificado influye en el número de calificaciones y en el número de estrellas. 
 
-En algunos casos, la variable es un número negativo ya que el año de estreno es posterior a la votación, lo cuál no es posible. Esto se puede deber a errores en el dataset con la fecha de estreno de la película, ya que, por ejemplo, se podría tener en cuenta su año de estreno en DVD y no en cines. 
+En algunos casos, la variable es un número negativo ya que el año de estreno es posterior a la votación, lo cual no es posible. Esto se puede deber a errores en el dataset con la fecha de estreno de la película, ya que, por ejemplo, se podría tener en cuenta su año de estreno en DVD y no en cines. 
 
 ```{r fig.align="center", fig.width=10, fig.height=6}
+#Se calcula las calificaciones según la diferencia de años 
 netflix %>%
   count(YearsSinceRelease, Rating) %>%
   ggplot(mapping = aes(x = Rating, y = YearsSinceRelease)) +
   geom_tile(mapping = aes(fill = n, width = 0.9, height = 0.9)) +
   scale_fill_gradientn(colours = c("lightgoldenrod1", "coral",  "orange", "purple", "maroon")) +
-  theme_minimal()
+  theme_minimal(base_size = 12)
+
 ```
 
 
-En el presente gráfico se observa que el mayor número de calificaciones se da cuando han pasado un año o dos desde el estreno hasta la calificación, mientras que, el menor número de votaciones se dan cuando han pasado 20 o más años. Con esta representación se puede intuir que la variable *“YearsSiceRelease”* está correlacionada con el número de calificaciones.
+En el presente gráfico se observa que el mayor número de calificaciones se da cuando han pasado un año o dos desde el estreno hasta la calificación, mientras que, el menor número de votaciones se dan cuando han pasado 20 o más años. Con esta representación se puede intuir que la variable *“YearsSiceRelease”* está correlacionada con el número de calificaciones. Así pues, se puede afirmar que los usuarios prefieren ver películas más actuales. 
 
-En cuanto al número de estrellas dado en las puntuaciones de los usuarios, vemos que no hay mucha diferencia entre si la película es más antigua o no, ya que por ejemplo, observamos que si han pasado solo 2 años o más de 40 del estreno, las califaciones de 3 o más estrellas aparecen con más frecuencia que las de 1 o 2. Podemos concluir por lo tanto que la antigüedad de la película no influye en el número de estrellas de las votaciones.
+En cuanto al número de estrellas dado en las puntuaciones de los usuarios, se observa que no hay mucha diferencia entre si la película es más antigua o no, ya que por ejemplo, se puede ver que si han pasado solo 2 o más de 40 años del estreno, las califaciones de 3 o más estrellas aparecen con más frecuencia que las de 1 o 2. Se podría concluir por lo tanto que la antigüedad de la película no influye en el número de estrellas de las votaciones.
 
 
 &nbsp;
@@ -673,7 +703,7 @@ En cuanto al número de estrellas dado en las puntuaciones de los usuarios, vemo
 
 # **Nuestra visión del análisis**
 
-En este análisis hemos podido estudiar las diferentes valoraciones de los usuarios de Netflix de una muestra de 250 películas de la plataforma. Concretamente se ha podido analizar:
+En este análisis se ha podido estudiar las diferentes valoraciones de los usuarios de *Netflix* de una muestra de 250 películas de la plataforma. Concretamente se ha podido analizar:
 
 * Número total de calificaciones por estrellas
 * Película de la más a la menos votada (nube de palabras)
@@ -686,10 +716,10 @@ En este análisis hemos podido estudiar las diferentes valoraciones de los usuar
 * Número de películas estrenadas por década
 * Relación entre la calificación y la diferencia en años entre las votaciones y el estreno de las películas
 
-Con el fin de hacer un análisis más exhaustivo hubiese sido interesante disponer del género y duración de la película o más información de los usuarios como pueda ser la edad, el sexo o el tiempo que lleva suscrito a la plataforma.   
+Con el fin de hacer un análisis más exhaustivo hubiese sido interesante disponer del género y duración de la película o más información de los usuarios como pueda ser la edad, el sexo o el tiempo que lleva suscrito a la plataforma. No obstante, se ha observado como, en general, el aumento de usuarios, calificaciones y, por lo tanto, visualizaciones ha ido en aumento año tras año. La plataforma de streaming cuenta cada vez más con películas antiguas y, sobre todo, actuales que crean un enorme catálogo donde la gente está dispuesta a pasar sus horas de ocio.
 
 ```{r message=FALSE, warning=FALSE, fig.align="center"}
-
+#Representación gráfica películas según número de calificaciones
 set.seed(2)
 ggplot(movies_title, aes(label = Title, 
                          size = Freq, 
