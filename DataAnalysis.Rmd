@@ -1,17 +1,12 @@
 ---
-title: "Netfliz Prize Program"
+title: "Análisis: Netfliz Prize Program"
 author: "Laura Basalo Tur, Camila Pérez Arévalo"
-date: "20/11/2020"
+date: "23/12/2020"
+always_allow_html: true
 output:
-  html_document:
-    number_sections: no
-    toc: yes
-    code_folding: hide
-    theme: cosmo
-    highlight: tango
   pdf_document:
     toc: yes
-  bookdown::html_document2:
+  html_document:
     number_sections: no
     toc: yes
     code_folding: hide
@@ -76,6 +71,9 @@ Otro de los archivos que se utilizarán en este estudio contiene el título de c
 Una vez realizado este proceso generaremos una nueva variable para incluirla en nuestro estudio ya que sería interesante medir la diferencia de años transcurridos desde el estreno hasta la puntuación de las diferentes películas ("YearsSinceRelease").
 
 
+&nbsp;
+
+
 # **Carga y lectura de datos**
 
 El primer paso para realizar la carga de datos es leer el fichero *"filas_ID_combined_all.txt"* de donde obtendremos por cada ID de película el número del fichero donde se encuentran las puntuaciones de cada usuario y las posiciones de la fila inicial y final de estas. De la misma forma, cargaremos los cuatro ficheros *'combined_data_{nº}'* con la información de las puntuaciones de las películas.
@@ -128,6 +126,9 @@ write.table(df_ratings,"data/data_sample.txt", row.names = FALSE, col.names = FA
 #Eliminamos variables que ya no son útiles
 rm(data_list, file_list, file_names, filas_ID_combined_all)
 ```
+
+
+&nbsp;
 
 
 # **Construcción del modelo de datos**
@@ -209,9 +210,13 @@ write.csv(netflix, "data/netflix.csv", row.names = FALSE)
 ```
 
 
+&nbsp;
+
+
 # **Analizando nuestros datos**
 
 Una vez se han exportado los datos, leído y modelado podemos comenzar a trabajar con ellos y analizarlos.
+
 
 ## **Estructura del modelo de datos**
 
@@ -238,9 +243,13 @@ str(netflix)
 * **YearsSinceRelease:** Variable numérica la cual se ha calculado mediante la resta de RatingDate y MovieRelease. Esta variable indica el número de años que ha pasado desde que se ha estrenado una determinada película hasta que el usuario la ha calificado.
 
 
+&nbsp;
+
+
 ## **Calificaciones de las películas**
 
 A continuación se realizará un análisis en relación a las calificaciones de los usuarios y su relación con otras variables.
+
 
 ### ¿Cuántas calificaciones hay en total y cómo se distribuyen? 
 
@@ -399,7 +408,7 @@ bar_plot2 = ggplot(data = prop_table_month, aes(x = Month, y = Freq)) +
   ggtitle("Percentage of ratings by month") +
   theme_minimal()
   
- div(ggplotly(bar_plot2), align ="center")
+ div(ggplotly(bar_plot2, tooltip = c("Month", "Freq")), align ="center")
 
 ```
 Se observa en el gráfico que la distribución de las calificaciones por meses está relativamente compensada siendo octubre el mes en el cual se calificaron más películas con un 10% del total de votaciones, le sigue el mes de septiembre con un 9.9% y noviembre con un 8.9%. En el mes de enero se realizaron el menor número de calificaciones (6.8% del total).
@@ -491,7 +500,7 @@ Es lógico afirmar que con el paso de los años se realizan más votaciones ya q
 
 Visualizaremos la distribución del score promedio por año con las 10 películas más votadas. El rango de años estudiado es desde el 1999 hasta el 2005.
 
-```{r fig.cap='Calificación media por año y película.', message = FALSE, warning = FALSE, fig.align="center", fig.width=10, fig.height=8, cache = TRUE}
+```{r fig.cap='Calificación media por año y película.', message = FALSE, warning = FALSE, fig.align="center", cache = TRUE}
 
 data = filter(netflix, Title %in% movies_title[1:10,1]) %>%
   group_by(Title, Year) %>%
@@ -679,7 +688,7 @@ En este análisis hemos podido estudiar las diferentes valoraciones de los usuar
 
 Con el fin de hacer un análisis más exhaustivo hubiese sido interesante disponer del género y duración de la película o más información de los usuarios como pueda ser la edad, el sexo o el tiempo que lleva suscrito a la plataforma.   
 
-```{r message=FALSE, warning=FALSE, fig.align="center", fig.width=6, fig.height=6}
+```{r message=FALSE, warning=FALSE, fig.align="center"}
 
 set.seed(2)
 ggplot(movies_title, aes(label = Title, 
