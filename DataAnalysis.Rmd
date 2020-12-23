@@ -50,7 +50,7 @@ src="imgs/netflix-header.gif">
 
 # **Introducción**
 
-En el presente estudio se procederá a analizar el data set llamado *"Netflix Prize data"* obtenido en la página web Kaggle. Dicho dataset se creó como una competición para encontrar el mejor algoritmo de predicción de la puntuación que los usuarios dan a las películas de la plataforma. 
+En el presente estudio se procederá a analizar el data set llamado *"Netflix Prize data"* obtenido de la página web [Kaggle](https://www.kaggle.com/netflix-inc/netflix-prize-data). Dicho dataset se creó como una competición para encontrar el mejor algoritmo de predicción de la puntuación que los usuarios dan a las películas de la plataforma. 
 
 El objetivo es analizar diversos aspectos y estadísticos de las variables y representarlo gráficamente. No obstante, antes de extraer la información y comenzar a trabajar sobre ella se ha procedido a visualizar qué tipo de datos están disponibles:
 
@@ -213,7 +213,7 @@ write.csv(netflix, "data/netflix.csv", row.names = FALSE)
 
 # **Analizando nuestros datos**
 
-Una vez se han exportado, leído y modelado los datos se procede a analizar y trabajar con ellos.
+Una vez se han exportado, leído y modelado los datos, se procede a analizarlos empezar a trabajar con ellos.
 
 ## **Estructura del modelo de datos**
 
@@ -313,7 +313,7 @@ Como podemos observar destacan películas como: *Good morning, Vietnam*, *Lethal
 
 Se analiza el número de calificaciones por estrellas de la película más votada.
 
-```{r message = FALSE, warning = FALSE, fig.align="center", fig.width=10}
+```{r message = FALSE, warning = FALSE, fig.align="center", fig.width=7, fig.height=4}
 #Se obtiene la película más votada, la primera de la tabla ordenada
 data_morevoted = filter(netflix, Title == movies_title[1, 1])
 
@@ -332,7 +332,7 @@ ggplot(data_morevoted, aes(x = Rating)) +
        title = data_morevoted$Title[1]) +
   scale_y_continuous(limits=c(0,45000)) +
   coord_flip() + 
-  theme(text = element_text(size = 20))
+  theme_classic()
 
 #Image in the visualization 
 image = image_read("imgs/masvotada.jpg") 
@@ -351,7 +351,7 @@ Esta película tiene un total de 82.949 calificaciones siendo la de 4 estrellas 
 
 Se analiza también el número de calificaciones por estrellas de la película menos votada.
 
-```{r message = FALSE, warning = FALSE, fig.align="center", fig.width=10}
+```{r message = FALSE, warning = FALSE, fig.align="center", fig.width=7, fig.height=4}
 #Se obtiene la película menos votada, la última de la tabla ordenada
 data_lessvoted = filter(netflix, Title == movies_title[nrow(movies_title), 1])
 
@@ -371,7 +371,7 @@ ggplot(data_lessvoted, aes(x = Rating)) +
        title = data_lessvoted$Title[1]) +
   scale_y_continuous(limits=c(0,8)) +
   coord_flip() + 
-  theme(text = element_text(size = 20))
+  theme_classic()
 
 # Image in the visualization 
 image = image_read("imgs/menosvotada.jpg") 
@@ -388,7 +388,7 @@ Esta película únicamente cuenta con 10 votos siendo la mayoría de ellos con c
 
 ### ¿Afecta la estación del año al número de calificaciones que hacen los usuarios?
 
-Para comprobar si hay diferencia entre el número de votaciones que hay en total dependiedo del mes del año se ha representado la distribución porcentual en un diagrama de barras.
+Para comprobar si hay diferencia entre el número de votaciones que hay en total dependiendo del mes del año se ha representado la distribución porcentual en un diagrama de barras. Además, se ha incluido una diferenciación gráfica por colores según la estación del año de cada mes en el hemisferio norte y desde el punto de vista astronómico.
 
 ```{r fig.align="center", fig.width=7, fig.height=4, cache = TRUE}
 
@@ -435,7 +435,7 @@ Además, se puede intuir que con ciertas festividades, como puede ser Halloween 
 
 ### ¿Afecta el día de la semana al número de visualizaciones y calificaciones que hacen los usuarios?
 
-Realizamos el mismo estudio de la distribución de calificaciones pero teniendo en cuenta en esta ocasión los días de la semana. Para ello, se ha creado una nueva variable en el data set ***DayOfWeek*** que, dada la fecha de *RatingDate* con la función *weekdays* nos proporciona el día de la semana para día del calendario en concreto.
+Realizamos el mismo estudio de la distribución de calificaciones pero teniendo en cuenta en esta ocasión los días de la semana. Para ello, se ha creado una nueva variable en el data set ***DayOfWeek*** que, dada la fecha de *RatingDate* con la función *weekdays* nos proporciona el día de la semana para un día del calendario en concreto.
 
 ```{r fig.align="center", fig.width=7, fig.height=4, cache = TRUE}
 #Se añade una variable nueva en el dataset que indique el día de la semana según la fecha de la calificación
@@ -703,7 +703,7 @@ En cuanto al número de estrellas dado en las puntuaciones de los usuarios, se o
 
 # **Nuestra visión del análisis**
 
-En este análisis se ha podido estudiar las diferentes valoraciones de los usuarios de *Netflix* de una muestra de 250 películas de la plataforma. Concretamente se ha podido analizar:
+En este análisis se han podido estudiar las diferentes valoraciones de los usuarios de *Netflix* de una muestra de 250 películas de la plataforma. Concretamente se ha podido analizar:
 
 * Número total de calificaciones por estrellas
 * Película de la más a la menos votada (nube de palabras)
