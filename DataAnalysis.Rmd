@@ -163,7 +163,7 @@ netflix %<>%
 rm(df_ratings, movie_rows, rows_ID, reps)
 ```
 
-Con el objetivo de completar el dataset, se realiza la unión de la tibble *netflix* con los datos exportados del fichero *movies_titles.csv*, añadiendo así la variable del nombre de la película y el año de estreno. Una vez se ha realizado el *inner join*, se procede al cambio de tipo de cada variable para que concuerde con la información que representan. 
+Con el objetivo de completar el dataset, se realiza la unión de la tibble *netflix* con los datos exportados del fichero *movies_titles.csv*, añadiendo así la variable del nombre de la película y el año de estreno. Una vez se ha realizado el *inner join*, se procede a cambiar el tipo de cada variable para que concuerde con la información que representan. 
 
 
 ```{r, message = FALSE, cache = TRUE}
@@ -213,7 +213,7 @@ write.csv(netflix, "data/netflix.csv", row.names = FALSE)
 
 # **Analizando nuestros datos**
 
-Una vez se han exportado, leído y modelado los datos, se procede a analizarlos empezar a trabajar con ellos.
+Una vez se han exportado, leído y modelado los datos, se procede a analizarlos y a empezar a trabajar con ellos.
 
 ## **Estructura del modelo de datos**
 
@@ -231,13 +231,13 @@ str(netflix)
 
 * **UserID:** Variable cualitativa que representa el ID único del usuario que ha calificado la película.
 
-* **Rating:** Variable cuantitativa ordinal que representa la calificación que ha hecho cada usuario de las películas que ha puntuado. Esta calificación puede ser dentro del rango [1,2,3,4,5], donde 1 estrella representa la calificación más baja y 5 estrellas la calificación más alta.
+* **Rating:** Variable cuantitativa ordinal que representa la calificación que ha hecho cada usuario de las películas que ha puntuado. Esta calificación puede ser de 1,2,3,4 o 5 estrellas, donde 1 representa la calificación más baja y 5 la más alta.
 
 * **RatingDate:** Variable cuantitativa continua definida como tipo *date*, que representa la fecha en la cual el usuario realizó la calificación de una determinada película. También disponemos de las variables cuantitativas **Year**, **Month** y **Day** generadas al separar **RatingDate**.
  
 * **MovieRelease:** Variable cuantitativa discreta que indica el año en el cual se estrenó la película. El año de estreno puede referirse tanto a estreno de una determinada película en el cine como en DVD.
 
-* **YearsSinceRelease:** Variable cuantitativa discreta la cual se ha calculado mediante la resta de RatingDate y MovieRelease. Esta variable indica el número de años que ha pasado desde que se ha estrenado una determinada película hasta que el usuario la ha calificado.
+* **YearsSinceRelease:** Variable cuantitativa discreta la cual se ha calculado mediante la resta de *RatingDate* y *MovieRelease*. Esta variable indica el número de años que ha pasado desde que se ha estrenado una determinada película hasta que el usuario la ha calificado.
 
 
 &nbsp;
@@ -281,7 +281,7 @@ moda = names(which(table(netflix$Rating) == max(table(netflix$Rating))))
 
 Como se puede observar en el gráfico, las puntuaciones generalmente han sido positivas ya que el mayor número de observaciones se encuentra concentrado entre 3 estrellas o más. De hecho, si realizamos la media de todas las calificaciones vemos que es de `r media` estrellas.
 
-La calificación de `r moda` estrellas es la moda con un total de 368895 votaciones, por lo que se puede deducir que la muestra de películas de este estudio los usuaarios han dado, en general, calificaciones más positivas.
+La calificación de `r moda` estrellas es la moda con un total de 368895 votaciones, por lo que se puede deducir que en la muestra de películas de este estudio los usuarios han dado, en general, calificaciones más positivas.
 
 
 &nbsp;
@@ -339,9 +339,9 @@ image = image_read("imgs/masvotada.jpg")
 grid.raster(image, x = 0.80, y = 0.35, height = 0.4)
 ```
 
-La película que ha obtenido el mayor número de calificaciones es *Good morning, Vietnam*, una película dramática estadounidense, estrenada en 1987, que trata sobre un locutor de radio que llega a Saigón a levantar el ánimo de las tropas en plena guerra entre EE. UU. y Vietnam.
+La película que ha obtenido el mayor número de calificaciones es *Good morning, Vietnam*, una película dramática estadounidense, estrenada en 1987, que trata sobre un locutor de radio que llega a Saigón a levantar el ánimo de las tropas en plena guerra entre EE.UU. y Vietnam.
 
-Esta película tiene un total de 82.949 calificaciones siendo la de 4 estrellas la más frecuente y con una media de 3.85, superior a la del estudio (`r media`). 
+Esta película tiene un total de 82949 calificaciones siendo la de 4 estrellas la más frecuente y con una media de 3.85, superior a la del estudio (`r media`). 
 
 
 &nbsp;
@@ -425,7 +425,7 @@ bar_plot2 = ggplot(prop_table_month, aes(x = Month, y = Freq)) +
 ```
 Se observa en el gráfico que la distribución de las calificaciones por meses está relativamente compensada, siendo octubre el mes en el cual se calificaron más películas con un 10% del total de votaciones, le sigue el mes de septiembre con un 9.9% y noviembre con un 8.9%. En el mes de enero se realizaron el menor número de calificaciones (6.8% del total).
 
-Se puede deducir que el periodo de otoño, después de las vacaciones de verano, es cuando los usuarios visualizan y votan más películas de la plataforma, lo que tiene sentido ya que con el cambio de estación y rutina la gente realiza planes o actividades más relacionadas con estar en casa.
+Se puede deducir que en otoño, después de las vacaciones de verano, es cuando los usuarios visualizan y votan más películas de la plataforma, lo que tiene sentido ya que con el cambio de estación y rutina la gente realiza planes o actividades más relacionadas con estar en casa.
 
 Además, se puede intuir que con ciertas festividades, como puede ser Halloween celebrada a finales de octubre, se incrementa el número de visualizaciones y calificaciones ya que los usuarios tienden a ver películas de terror. En este caso, en octubre se encuentran valoraciones de películas clasificadas con dicho género: *Destino Final*, *Eaten Alive*, *Proteus* o *Killing Zoe*, entre otras.
 
@@ -466,7 +466,7 @@ El número de votaciones según el día de la semana sigue una distribución asi
 
 Se observa que de lunes a jueves se encuentra más del 60% de las calificaciones y, el viernes y fin de semana son los días en los cuales se puntúan un menor número de películas. Esto se puede explicar a los hábitos que normalmente pueden tener los usuarios, ya que en el fin de semana se suelen realizar más planes fuera de casa, mientras que entre semana, al ser día laboral, la gente normalmente pasa más tiempo en casa y es más propensa a utilizar la plataforma. 
 
-Con la finalidad de comprobar si los usuarios dan calificación de menor o mayor estrellas según el día, se ha calculado la media de estrellas por día de la semana con el total de datos de la muestra:
+Con la finalidad de comprobar si los usuarios dan una calificación menor o mayor según el día, se ha calculado la media de estrellas por día de la semana con el total de datos de la muestra:
 
 ```{r message = FALSE, warning = FALSE}
 #Nota media por día de la semana
@@ -596,9 +596,9 @@ res = pd.concat([netflix_py.groupby('Title')['Rating'].describe(),
                       netflix_py.groupby('Title')['Rating'].agg(pd.Series.mode).rename('mode')
                      ], axis=1)
                      
-res = round(res.sort_values(by=['count'],ascending = False).head(5), 2)
+res_count = round(res.sort_values(by=['count'],ascending = False).head(5), 2)
             
-print(tb.tabulate(res, headers='keys', tablefmt='psql'))
+print(tb.tabulate(res_count, headers='keys', tablefmt='psql'))
 ```
 
 
@@ -620,11 +620,40 @@ div(ggplotly(boxplot, height = 550, tooltip = c("Rating")), align ="center")
 
 ```
 
-Las cinco películas que más fueron clasificadas por los usuarios son: *Good morning, Vietnam* con una puntuación media de 3.85 estrellas, *Lethal Weapon 3* con 3.81, *Bad boys* con 3.72, *Freaky Friday*”* con una media de 3.55 y finalmente *Final Destination* con 3.49. Todas ellas, excepto las dos últimas, superan la puntuación media del total de este estudio (`r media` estrellas).
+Las cinco películas más calificadas por los usuarios son: *Good morning, Vietnam* con una puntuación media de 3.85 estrellas, *Lethal Weapon 3* con 3.81, *Bad boys* con 3.72, *Freaky Friday*”* con una media de 3.55 y finalmente *Final Destination* con 3.49. Todas ellas, excepto las dos últimas, superan la puntuación media del total de este estudio (`r media` estrellas).
 
 Se observa que de las tres primeras películas, el 75% de las calificaciones es de 4 estrellas o menos, ya que la mediana coincide con el tercer cuartil. Los bigotes de estas películas, que representan cada uno el 25% de los datos fuera del rango intercuartílico, muestran que los usuarios han calificado con 2 o 5 estrellas, además de ver reflejados los valores atípicos donde la calificación ha sido de 1 estrella. 
 
 En las dos películas restante se puede ver que su distribución es diferente. En estos casos, no existe bigote superior y se observa que las votaciones que predominan se encuentran entre 3 y 5 estrellas. El 50% de las calificaciones es de 4 o menos. En estas dos películas no hay valores atípicos ya hay más distribución de las puntuaciones de los usuarios que van desde 1 a 5 estrellas. 
+
+El último estádistico a comentar es la desviación estándar, la cual es bastante similar entre estas películas. Según los datos obtenidos en la tabla, todas giran entorno a 1 punto de desviación, a excepción de *Good Morning, Vietnam* que es ligeramente más baja (0.89), lo que implica que sus calificaciones están menos dispersas que en el resto.
+
+
+&nbsp;
+
+
+### ¿Qué películas/series son consideradas como las mejores?
+
+Haciendo uso de los estadísticos de la tabla anterior, es posible comprobar cuáles son las cinco películas/series que mejor media tienen según las calificaciones de los usuarios. 
+
+
+```{python}
+res_mean = round(res.sort_values(by=['mean'],ascending = False).head(5), 2)
+            
+print(tb.tabulate(res_mean, headers='keys', tablefmt='psql'))
+```
+
+Se observa que aunque las películas anteriores fueron las más votadas, no son las que mejor media tienen, ya que en este caso son diferentes series las que han destacado. La calificación media de *Curb Your Enthusiasm: Season 4* es la más alta con 4.36 estrellas. Además, solo el 25% del total de sus calificaciones han tenido 4 o menos estrellas, por lo que el 75% de ellas han sido puntuaciones igual a 5. 
+
+
+De la misma manera, se ordena la tabla por la desviación estándar: 
+
+```{python}
+res_std = round(res.sort_values(by=['std'],ascending = False).head(5), 2)
+            
+print(tb.tabulate(res_std, headers='keys', tablefmt='psql'))
+```
+Con este estadístico se pueden visualizar cuáles son las películas y series que más dispersión de puntuación por estrella tienen. Es decir, las calificaciones de los usuarios tienen mayor variabilidad. La película *In the Face of Evil: Reagan's War in Word and Deed* ha sido la que más diversidad de opiniones ha generado en la muestra, con una desviación estándar de 1.6. 
 
 
 &nbsp;
@@ -695,7 +724,7 @@ netflix %>%
 
 En el presente gráfico se observa que el mayor número de calificaciones se da cuando han pasado un año o dos desde el estreno hasta la calificación, mientras que, el menor número de votaciones se dan cuando han pasado 20 o más años. Con esta representación se puede intuir que la variable *“YearsSiceRelease”* está correlacionada con el número de calificaciones. Así pues, se puede afirmar que los usuarios prefieren ver películas más actuales. 
 
-En cuanto al número de estrellas dado en las puntuaciones de los usuarios, se observa que no hay mucha diferencia entre si la película es más antigua o no, ya que por ejemplo, se puede ver que si han pasado solo 2 o más de 40 años del estreno, las califaciones de 3 o más estrellas aparecen con más frecuencia que las de 1 o 2. Se podría concluir por lo tanto que la antigüedad de la película no influye en el número de estrellas de las votaciones.
+En cuanto a la cantidad de puntuaciones por número de estrellas, se observa que no hay mucha diferencia entre si la película es más antigua o no, ya que por ejemplo, se puede ver que si han pasado solo 2 o más de 40 años del estreno, las califaciones de 3 o más estrellas aparecen con más frecuencia que las de 1 o 2. Se podría concluir por lo tanto que la antigüedad de la película no influye en el número de estrellas de las votaciones.
 
 
 &nbsp;
