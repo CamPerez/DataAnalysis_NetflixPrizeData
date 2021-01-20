@@ -7,8 +7,8 @@ El objetivo es analizar diversos aspectos y estadísticos de las variables y rep
 ## Contenido
 
 * Introducción
-  * * Combined Data
-  * * Movie titles
+  * Combined Data
+  * Movie titles
 * Carga y lectura de datos
 * Construcción del modelo de datos
 * Analizando nuestros datos
