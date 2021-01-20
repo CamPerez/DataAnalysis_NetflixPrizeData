@@ -12,8 +12,8 @@ El objetivo es analizar diversos aspectos y estadísticos de las variables y rep
 * Carga y lectura de datos
 * Construcción del modelo de datos
 * Analizando nuestros datos
-  * * Estructura del modelo de datos
-  * * Calificaciones de las películas
+  * Estructura del modelo de datos
+  * Calificaciones de las películas
   * * ¿Cuántas calificaciones hay en total y cómo se distribuyen?
   * * ¿Cuáles son las películas más votadas?
   * * ¿Cuál es la distribución de las calificaciones de la película más votada?
